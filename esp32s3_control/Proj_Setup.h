@@ -66,6 +66,9 @@
 // linear actuator frequency
 #define LA_FREQ 2000
 
+#define MAX_PWM pow(2, RESOL)-1   // the max duty cycle
+#define MIN_PWM MAX_PWM/5         // the min duty cycle, the motor will not move, if the duty cycle is lower
+
 // motor hall encoder interrupt handler
 void IRAM_ATTR motorOnePulseIRQ();
 void IRAM_ATTR motorTwoPulseIRQ();
@@ -81,5 +84,7 @@ void setupLinearActuator();
 
 // set up everything
 void setupAllMotors();
+
+
 
 #endif
