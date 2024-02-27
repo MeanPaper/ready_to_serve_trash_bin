@@ -1,5 +1,5 @@
-#ifndef PIN_DEF_H
-#define PIN_DEF_H
+#ifndef PROJ_SETUP_H
+#define PROJ_SETUP_H
 
 
 /**
@@ -48,8 +48,25 @@
 #define Ln_Act_D2   37
 #define Ln_Act_PWM  15
 
-// set up all the project pins
-void set_project_pins();
+/* PWM control section */
+// channels
+#define CHAN_MT_ONE
+#define CHAN_MT_TWO
+#define CHAN_LN_ACT
 
+// motor channel frequency
+
+// linear actuator frequency
+
+volatile long motor_one_pulse = 0; // left motor
+volatile long motor_two_pulse = 0; // right motor
+
+// set up the gear motor
+void setupMotorOne();
+
+void setupMotorTwo();
+
+// set up the linear actuator
+void setupLinearActuator();
 
 #endif

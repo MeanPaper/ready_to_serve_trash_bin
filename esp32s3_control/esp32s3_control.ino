@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
-#include "PIN_Def.h"
+#include "PIN_Setup.h"
 #include "Proj_Debug.h"
 
 const char * ssid = "The Retreat";
@@ -54,10 +54,6 @@ void handleRoot(AsyncWebServerRequest * request){ // use this for debugging I gu
 // force stop
 void handleStopMotors(AsyncWebServerRequest * request){ // maybe set a flag, rather than this
   Serial.println("Request stop");
-  digitalWrite(MT1_D1, LOW);
-  digitalWrite(MT1_D2, LOW);
-  digitalWrite(MT2_D1, LOW);
-  digitalWrite(MT2_D2, LOW);
   request->send(200, "application/json", "");
 }
 
