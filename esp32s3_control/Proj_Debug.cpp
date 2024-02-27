@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include "PIN_Def.h"
 #include "Proj_Debug.h"
 
 void debug_pins_basic(){
@@ -59,4 +58,11 @@ void debug_pins_basic(){
   digitalWrite(Ln_Act_D1, LOW);
   digitalWrite(Ln_Act_D2, LOW);
   digitalWrite(Ln_Act_PWM, LOW);
+}
+
+// check full setup
+void debug_pins_setup_full(){
+  setupMotorOne();
+  setupMotorTwo();
+  setupLinearActuator();
 }

@@ -1,5 +1,7 @@
-#ifndef PROJ_DEBUG_H
-#define PROJ_DEBUG_H
+#ifndef _PROJ_DEBUG_H_
+#define _PROJ_DEBUG_H_
+
+#include "Proj_Setup.h"
 
 // this is library that contain all the debug functions
 
@@ -11,5 +13,8 @@ void debug_pins_pwm();
 
 // check hall encoder reading
 void debug_pins_hall();
+
+// check full setup
+void debug_pins_setup_full();
 
 #endif

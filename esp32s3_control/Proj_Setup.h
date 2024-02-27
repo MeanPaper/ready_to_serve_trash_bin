@@ -1,6 +1,10 @@
-#ifndef PROJ_SETUP_H
-#define PROJ_SETUP_H
+#ifndef _PROJ_SETUP_H_
+#define _PROJ_SETUP_H_
 
+#include <Arduino.h>
+#include "esp32-hal-ledc.h"
+
+// #include "Proj_Debug.h"
 
 /**
   * DC Motor Control 
@@ -50,23 +54,32 @@
 
 /* PWM control section */
 // channels
-#define CHAN_MT_ONE
-#define CHAN_MT_TWO
-#define CHAN_LN_ACT
+#define CHAN_MT_ONE 1
+#define CHAN_MT_TWO 2
+#define CHAN_LN_ACT 3
 
-// motor channel frequency
+#define RESOL   8
+
+// motor channel frequency, this may not work
+#define MT_FREQ 2000
 
 // linear actuator frequency
+#define LA_FREQ 2000
 
-volatile long motor_one_pulse = 0; // left motor
-volatile long motor_two_pulse = 0; // right motor
+// motor hall encoder interrupt handler
+void IRAM_ATTR motorOnePulseIRQ();
+void IRAM_ATTR motorTwoPulseIRQ();
 
-// set up the gear motor
+// set up gear motor one 
 void setupMotorOne();
 
+// set up gear motor two
 void setupMotorTwo();
 
 // set up the linear actuator
 void setupLinearActuator();
+
+// set up everything
+void setupAllMotors();
 
 #endif
