@@ -103,48 +103,94 @@ void setupAllMotors(){
 }
 
 // first motor control
-void channel_one_Ctrl(float pwmInputOne){
-  // get int value
-  int pwmIntOne = round(pwmInputOne);
+void motor_one_Ctrl(float pwmInputOne){
+    // get int value
+    int pwmIntOne = round(pwmInputOne);
 
-  // value == 0 mean stop
-  if(pwmIntOne == 0){
-    digitalWrite(MT1_D1, LOW);
-    digitalWrite(MT1_D2, LOW);
-    return;
-  }
+    // value == 0 mean stop
+    if(pwmIntOne == 0){
+        digitalWrite(MT1_D1, LOW);
+        digitalWrite(MT1_D2, LOW);
+        return;
+    }
 
-  // determine the direction of rotation
-  if(pwmIntOne > 0){
-    digitalWrite(MT1_D1, LOW);
-    digitalWrite(MT1_D2, HIGH);
-    // MIN_PWM <= pwmIntA <= MAX_PWM
-    ledcWrite(CHAN_MT_ONE, constrain(pwmIntOne, MIN_PWM, MAX_PWM));
-  }
-  else{
-    digitalWrite(MT1_D1, HIGH);
-    digitalWrite(MT1_D2, LOW);
-    ledcWrite(CHAN_MT_ONE, -constrain(pwmIntOne, -MAX_PWM, 0));
-  }
+    // determine the direction of rotation
+    if(pwmIntOne > 0){
+        digitalWrite(MT1_D1, LOW);
+        digitalWrite(MT1_D2, HIGH);
+        // MIN_PWM <= pwmIntA <= MAX_PWM
+        ledcWrite(CHAN_MT_ONE, constrain(pwmIntOne, MIN_PWM, MAX_PWM));
+    }
+    else{
+        digitalWrite(MT1_D1, HIGH);
+        digitalWrite(MT1_D2, LOW);
+        ledcWrite(CHAN_MT_ONE, -constrain(pwmIntOne, -MAX_PWM, 0));
+    }
 }
 
 // second motor control
-void channel_two_Ctrl(float pwmInputTwo){
-  int pwmIntTwo = round(pwmInputTwo);
-  if(pwmIntTwo == 0){
-    digitalWrite(MT2_D1, LOW);
-    digitalWrite(MT2_D2, LOW);
-    return;
-  }
+void motor_two_Ctrl(float pwmInputTwo){
+    int pwmIntTwo = round(pwmInputTwo);
+    if(pwmIntTwo == 0){
+        digitalWrite(MT2_D1, LOW);
+        digitalWrite(MT2_D2, LOW);
+        return;
+    }
 
-  if(pwmIntTwo > 0){
-    digitalWrite(MT1_D1, LOW);
-    digitalWrite(MT2_D2, HIGH);
-    ledcWrite(CHAN_MT_TWO, constrain(pwmIntTwo, 0, MAX_PWM));
-  }
-  else{
-    digitalWrite(MT1_D1, HIGH);
-    digitalWrite(MT1_D2, LOW);
-    ledcWrite(CHAN_MT_TWO,-constrain(pwmIntTwo, -MAX_PWM, 0));
-  }
+    if(pwmIntTwo > 0){
+        digitalWrite(MT1_D1, LOW);
+        digitalWrite(MT2_D2, HIGH);
+        ledcWrite(CHAN_MT_TWO, constrain(pwmIntTwo, 0, MAX_PWM));
+    }
+    else{
+        digitalWrite(MT1_D1, HIGH);
+        digitalWrite(MT1_D2, LOW);
+        ledcWrite(CHAN_MT_TWO,-constrain(pwmIntTwo, -MAX_PWM, 0));
+    }
+}
+
+void PID_compute(){
+    if(millis() - currentTime < pid_interval){
+        return;
+    }
+    // compute motor two speed, unit = revolutions per min
+    actualSpeed_two = (float)((motor_two_pulse / shaft_ppr) * 60 * (1000 / pid_interval));
+    B_wheel_pulse_count = 0;
+
+    // compute motor one speed, unit = revolutions per min
+    actualSpeed_A = (float)((motor_one_pulse / shaft_ppr) * 60 * (1000 / pid_interval));
+    A_wheel_pulse_count = 0;
+
+    // compute error and adjust control
+    double error_one = targetSpeed_one - actualSpeed_one;
+    integral_one += error_one;
+    double derivative_one = error_one - previousError_one;
+
+    double error_two = targetSpeed_two - actualSpeed_two;
+    integral_two += error_two;
+    double derivative_two = error_B - previousError_two;
+
+    // compute pid output
+    double output_one = Kp * error_one + Ki * integral_one + Kd * derivative_one;
+    double output_two = Kp * error_two + Ki * integral_two + Kd * derivative_two;
+    
+    // constrain output
+    output_one = constrain(output_one, (-1)*MAX_PWM, MAX_PWM);
+    output_two = constrain(output_two, (-1)*MAX_PWM, MAX_PWM);
+
+    // output PWM signal, control motor speed
+    motor_one_Ctrl(-output_one);
+    motor_two_Ctrl(-output_two);
+
+    // update error
+    previousError_one = error_one;
+    previousError_two = error_two;
+
+    Serial.print("RPM_A: ");
+    Serial.print(actualSpeed_one);
+    Serial.print("   RPM_B: ");Serial.println(actualSpeed_two);
+    Serial.println("--- --- ---");
+
+    // delay(pid_interval);
+    currentTime = millis();
 }

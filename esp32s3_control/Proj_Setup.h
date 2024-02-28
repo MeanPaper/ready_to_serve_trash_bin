@@ -85,6 +85,13 @@ void setupLinearActuator();
 // set up everything
 void setupAllMotors();
 
+// motor controls
+void motor_one_Ctrl(float pwmInputOne);
+void motor_two_Ctrl(float pwmInputTwo);
+void linear_act_Ctrl(float pwmInputLnAct); // need to figure this out
+
+// compute PID
+void PID_compute();
 
 
 #endif
