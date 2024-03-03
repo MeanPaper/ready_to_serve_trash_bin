@@ -1,15 +1,26 @@
 #include "Proj_Setup.h"
 
-// global go here
+/* set to 1 to use the small motor, for code testing */
+#define TESTING 1
 
-// PID sample time
-int pid_interval = 100; // in milliseconds
+#if TESTING==1
+
+int ppr = 3;
+double reduction_ratio = 200;
+double max_speed = 70; // this is the rpm
+
+#else
 
 // pulse per revolution... for hall encoder
 int ppr = 11; 
-
 // gear reduction ratio, the denominator
-double reduction_ratio = 56;    
+double reduction_ratio = 56;   
+double max_speed = 150;
+
+#endif
+
+// PID sample time
+int pid_interval = 100; // in milliseconds
 
 // number of pulse for the shaft to turn one cycle
 double shaft_ppr = ppr * reduction_ratio; 
@@ -23,9 +34,9 @@ volatile long motor_two_pulse = 0; // right motor
 
 // --- --- --- close loop --- --- ---
 // PID controller parameters
-double Kp = 0.05;   // proportional
-double Ki = 0.05;   // integral
-double Kd = 0;      // differential
+double Kp = 15;   // proportional
+double Ki = 30;   // integral
+double Kd = 0.0001;      // differential
 
 // target speed and current speed
 double targetSpeed_one = 100.0;  
@@ -44,7 +55,7 @@ double integral_two = 0.0;
 /* function store in mem */
 void IRAM_ATTR motorOnePulseIRQ(){
     if(digitalRead(MT1_HALL_A)){
-        motor_one_pulse++;
+        motor_one_pulse++;  
     }
     else{
         motor_one_pulse--;
@@ -72,6 +83,7 @@ void setupMotorOne(){
     
     // interrupt 
     attachInterrupt(digitalPinToInterrupt(MT1_HALL_B), motorOnePulseIRQ, RISING);
+    targetSpeed_one = 0;
 }
 
 void setupMotorTwo(){
@@ -86,6 +98,7 @@ void setupMotorTwo(){
 
     // interrupt
     attachInterrupt(digitalPinToInterrupt(MT2_HALL_B), motorTwoPulseIRQ, RISING);
+    targetSpeed_two = 0;
 }
 
 void setupLinearActuator(){
@@ -149,17 +162,18 @@ void motor_two_Ctrl(float pwmInputTwo){
     }
 }
 
+// update output values
 void PID_compute(){
-    if(millis() - currentTime < pid_interval){
+    if(millis() < currentTime){
         return;
     }
     // compute motor two speed, unit = revolutions per min
     actualSpeed_two = (float)((motor_two_pulse / shaft_ppr) * 60 * (1000 / pid_interval));
-    B_wheel_pulse_count = 0;
+    motor_two_pulse = 0;
 
     // compute motor one speed, unit = revolutions per min
-    actualSpeed_A = (float)((motor_one_pulse / shaft_ppr) * 60 * (1000 / pid_interval));
-    A_wheel_pulse_count = 0;
+    actualSpeed_one = (float)((motor_one_pulse / shaft_ppr) * 60 * (1000 / pid_interval));
+    motor_one_pulse = 0;
 
     // compute error and adjust control
     double error_one = targetSpeed_one - actualSpeed_one;
@@ -168,7 +182,7 @@ void PID_compute(){
 
     double error_two = targetSpeed_two - actualSpeed_two;
     integral_two += error_two;
-    double derivative_two = error_B - previousError_two;
+    double derivative_two = error_two - previousError_two;
 
     // compute pid output
     double output_one = Kp * error_one + Ki * integral_one + Kd * derivative_one;
@@ -179,18 +193,31 @@ void PID_compute(){
     output_two = constrain(output_two, (-1)*MAX_PWM, MAX_PWM);
 
     // output PWM signal, control motor speed
-    motor_one_Ctrl(-output_one);
-    motor_two_Ctrl(-output_two);
-
+    motor_one_Ctrl(output_one);
+    motor_two_Ctrl(output_two);
+    Serial.printf("error_one: %f, integral: %f, output_one: %f\n", error_one, integral_one, output_one);
+    
     // update error
     previousError_one = error_one;
     previousError_two = error_two;
 
     Serial.print("RPM_A: ");
     Serial.print(actualSpeed_one);
-    Serial.print("   RPM_B: ");Serial.println(actualSpeed_two);
+    // Serial.printf(" targetSpeed_one: %f", targetSpeed_one);
+    // // Serial.print("   RPM_B: ");
+    // // Serial.println(actualSpeed_two);
     Serial.println("--- --- ---");
 
     // delay(pid_interval);
-    currentTime = millis();
+    currentTime = millis() + pid_interval;
+}
+
+void stopDCMotor(){
+    targetSpeed_one = 0;
+    targetSpeed_two = 0;
+}
+
+void setSpeed(double MTOneSpeed, double MTTwoSspeed){
+    targetSpeed_one = constrain(MTOneSpeed, -max_speed, max_speed);
+    targetSpeed_two = constrain(MTTwoSspeed, -max_speed, max_speed);
 }

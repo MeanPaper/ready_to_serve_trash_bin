@@ -61,10 +61,10 @@
 #define RESOL   8
 
 // motor channel frequency, this may not work
-#define MT_FREQ 2000
+#define MT_FREQ 200
 
 // linear actuator frequency
-#define LA_FREQ 2000
+#define LA_FREQ 200
 
 #define MAX_PWM pow(2, RESOL)-1   // the max duty cycle
 #define MIN_PWM MAX_PWM/5         // the min duty cycle, the motor will not move, if the duty cycle is lower
@@ -92,6 +92,12 @@ void linear_act_Ctrl(float pwmInputLnAct); // need to figure this out
 
 // compute PID
 void PID_compute();
+
+// stop dc motors
+void stopDCMotor();
+
+// set speed
+void setSpeed(double MTOneSpeed, double MTTwoSspeed);
 
 
 #endif
