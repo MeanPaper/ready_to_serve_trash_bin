@@ -17,4 +17,10 @@ void debug_pins_hall();
 // check full setup
 void debug_pins_setup_full();
 
+// for testing PID
+void debug_update_speed();
+
+// // use this to update the PID
+// void debug_PID_compute();
+
 #endif

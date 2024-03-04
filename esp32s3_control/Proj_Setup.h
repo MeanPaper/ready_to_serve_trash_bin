@@ -4,6 +4,8 @@
 #include <Arduino.h>
 #include "esp32-hal-ledc.h"
 
+#define TESTING 1
+#define DEBUG 1
 // #include "Proj_Debug.h"
 
 /**
@@ -97,7 +99,11 @@ void PID_compute();
 void stopDCMotor();
 
 // set speed
-void setSpeed(double MTOneSpeed, double MTTwoSspeed);
+void setTargetSpeed(double MTOneSpeed, double MTTwoSspeed);
 
+// for debug
+void plotData();
+void resetCommand();
+void setTargetTicksPerFrame(int left, int right);
 
 #endif
