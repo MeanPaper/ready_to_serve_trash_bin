@@ -65,7 +65,7 @@
 #define MT_FREQ 200               // motor channel frequency, this may not work
 #define LA_FREQ 200               // linear actuator frequency
 #define MAX_PWM pow(2, RESOL)-1   // the max duty cycle
-#define LID_TIME 10000            // the lid will open for 10 sec, for testing purpose
+#define LID_TIME 30000            // the lid will open for 10 sec, for testing purpose
 #define LID_TRANS_TIME 6500       // the lid transition time will be 6 sec
 
 enum lidStateEnum {OPEN=0, TRANS=1, CLOSE=2}; // the state of the lid
@@ -98,13 +98,11 @@ void QuickPID_Compute();
 
 void checkLid();
 
-// for debug
-void plotData();
-void parseCmd();
-void resetCommand();
-void setTargetTicksPerFrame(int left, int right);
+// the functions below are for debugging and testing
+void plotData();  // plotting data for PID tunning
+void parseCmd();  // parse serial command, for motor: m one_speed two_speed, for linear actuator: l
+void resetCommand();  // clear the command
+void setTargetTicksPerFrame(int left, int right); 
 
-
-// ------ for testing ------
 
 #endif

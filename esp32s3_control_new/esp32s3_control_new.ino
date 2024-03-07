@@ -2,12 +2,6 @@
 // #include <WiFi.h>
 // #include <ESPAsyncWebServer.h>
 #include "Proj_Setup.h"
-#define DEBUG 0
-
-#if (DEBUG)
-#else
-
-#endif
 
 // const char * ssid = "The Retreat";
 // const char * pass = NULL;
@@ -44,14 +38,12 @@ void setup(void) {
 	// server.on("/slowdown", HTTP_POST, handleSlowDown);
 	// server.begin();
 
-	// setupAllMotors();
-	// setupMotorOne();
-
+	stopDCMotor();
 	setupMotorInterrupt();
     setupLinearActuator();
+
+	// for debug
 	setTargetTicksPerFrame(0,0);
-    linearActCtrl(-200);
-    delay(LID_TRANS_TIME);
 }
 
 String line = "";
@@ -66,8 +58,6 @@ void loop(void) {
     // }
     // Serial.println("GG");
     // Serial.println(line);
-    // lidState processing
-
     
 }
 

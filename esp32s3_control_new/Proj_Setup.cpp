@@ -53,8 +53,8 @@ float output_one = 0;
 float output_two = 0;
 // --- --- --- --- --- --- --- --- ---
 
-
-bool openLid = false; // a command flag, only valid in CLOSE 
+// a command flag, only valid in CLOSE, for opening the lid
+bool openLid = false; 
 
 // To be test
 // PID MT1_PID(&actualSpeed_one, &output_one, &targetSpeed_one,Kp, Ki, Kd, DIRECT);
@@ -64,7 +64,7 @@ LinearActInfo lid;
 DCMotor Motor_one(MT1_D1, MT1_D2, MT1_PWM, MT1_HALL_A, MT1_HALL_B, CHAN_MT_ONE, MT_FREQ, RESOL);
 DCMotor Motor_two(MT2_D1, MT2_D2, MT2_PWM, MT2_HALL_A, MT2_HALL_B, CHAN_MT_TWO, MT_FREQ, RESOL);
 
-// cannot find a way to make this in the class
+// DC motor hall encoder interrupt handler
 void IRAM_ATTR motorOneIRQ(){ 
     if(digitalRead(Motor_one.mt_HALL_A)){
         Motor_one.motor_pulse_count++;
@@ -83,6 +83,7 @@ void IRAM_ATTR motorTwoIRQ(){
     }
 }
 
+// attach interrupt handler to the Motors
 void setupMotorInterrupt(){
     attachInterrupt(digitalPinToInterrupt(Motor_one.mt_HALL_B), motorOneIRQ, RISING);
     attachInterrupt(digitalPinToInterrupt(Motor_two.mt_HALL_B), motorTwoIRQ, RISING);
@@ -173,33 +174,33 @@ void PID_compute(){
 }
 
 void stopDCMotor(){
-    targetSpeed_one = 0;
-    targetSpeed_two = 0;
+    targetSpeed_one = 0.0;
+    targetSpeed_two = 0.0;
 }
 
-void setTargetSpeed(double MTOneSpeed, double MTTwoSspeed){
+void setTargetSpeed(float MTOneSpeed, float MTTwoSspeed){
     targetSpeed_one = constrain(MTOneSpeed, -max_speed, max_speed);
     targetSpeed_two = constrain(MTTwoSspeed, -max_speed, max_speed);
 }
 
 
-// void QuickPID_Init(){
-//     MT1_PID.SetTunings(Kp, Ki, Kd);
-//     MT1_PID.SetMode(MT1_PID.Control::automatic);
-//     MT1_PID.SetOutputLimits(-MAX_PWM, MAX_PWM);
-// }
+void QuickPID_Init(){
+    MT1_PID.SetTunings(Kp, Ki, Kd);
+    MT1_PID.SetMode(MT1_PID.Control::automatic);
+    MT1_PID.SetOutputLimits(-MAX_PWM, MAX_PWM);
+}
 
-// void QuickPID_Compute(){
-//     // compute motor two speed, unit = revolutions per min
-//     actualSpeed_two = (float)((Motor_two.motor_pulse_count / shaft_ppr) * 60 * (1000 / pid_interval));
-//     Motor_two.motor_pulse_count = 0; 
-//     // compute motor one speed, unit = revolutions per min
-//     actualSpeed_one = (float)((Motor_one.motor_pulse_count / shaft_ppr) * 60 * (1000 / pid_interval));
-//     Motor_one.motor_pulse_count = 0;
-//     MT1_PID.Compute();
-//     Motor_one.motorCtrl((int)round(output_one));
-//     Motor_two.motorCtrl((int)round(output_two));
-// }
+void QuickPID_Compute(){
+    // compute motor two speed, unit = revolutions per min
+    actualSpeed_two = (float)((Motor_two.motor_pulse_count / shaft_ppr) * 60 * (1000 / pid_interval));
+    Motor_two.motor_pulse_count = 0; 
+    // compute motor one speed, unit = revolutions per min
+    actualSpeed_one = (float)((Motor_one.motor_pulse_count / shaft_ppr) * 60 * (1000 / pid_interval));
+    Motor_one.motor_pulse_count = 0;
+    MT1_PID.Compute();
+    Motor_one.motorCtrl((int)round(output_one));
+    Motor_two.motorCtrl((int)round(output_two));
+}
 
 void checkLid(){
     switch(lid.lidState){
@@ -367,12 +368,18 @@ void plotData() {
 
         // for debug purpose: compare the actual speed to target
         // Serial.print("Left_Encoder_value:");
-        Serial.print("Detected_Speed");
+        Serial.print("Detected_one");
         Serial.print(actualSpeed_one);
         Serial.print(",");
         // Serial.print("Target_encoder:");
-        Serial.print("Target_Speed");
+        Serial.print("Target_one");
         Serial.println(targetSpeed_one);
+
+        Serial.print("Detected_two");
+        Serial.print(actualSpeed_two);
+        Serial.print(",");
+        Serial.print("Target_two");
+        Serial.println(targetSpeed_two);
         /******** comment out the code once PID param tuning is done *********/
     }
 }
