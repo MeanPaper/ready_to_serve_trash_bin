@@ -9,7 +9,7 @@ DCMotor::DCMotor(int D1, int D2, int PWM, int HALL_A, int HALL_B, int channel, i
     mt_HALL_A = HALL_A;
     mt_HALL_B = HALL_B;
     // mt_PWM = PWM;
-    // ledc_channel = channel;
+    ledc_channel = channel;
     mt_resol = resol;
     mt_freq = freq;
     max_pwm = pow(2, resol)-1;
@@ -25,7 +25,7 @@ DCMotor::~DCMotor(){}
 
 // motor control logic
 void DCMotor::motorCtrl(int pwmInput){
-    
+    // Serial.print("Run\n");
     // motor is not moving
     if(pwmInput == 0){
         digitalWrite(mt_D1, LOW);

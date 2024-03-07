@@ -48,13 +48,27 @@ void setup(void) {
 	// setupMotorOne();
 
 	setupMotorInterrupt();
+    setupLinearActuator();
 	setTargetTicksPerFrame(0,0);
-
+    linearActCtrl(-200);
+    delay(LID_TRANS_TIME);
 }
 
+String line = "";
 void loop(void) {
   	// PID_compute();
-	plotData();
+	// plotData();
+	// parseCmd();
+	// checkLid();
+
+    // while(Serial.available()){
+    //     line = Serial.readString();
+    // }
+    // Serial.println("GG");
+    // Serial.println(line);
+    // lidState processing
+
+    
 }
 
 // web service handlers

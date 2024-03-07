@@ -9,22 +9,20 @@ double max_speed = 70; // this is the rpm
 
 #else
 
-// pulse per revolution... for hall encoder
-int ppr = 11; 
-// gear reduction ratio, the denominator
-double reduction_ratio = 56;   
+int ppr = 11; // pulse per revolution... for hall encoder
+double reduction_ratio = 56;  // gear reduction ratio, the denominator
 double max_speed = 150;
 
 #endif
 
-// PID sample time
-int pid_interval = 100; // in milliseconds
+// PID sample time (ms)
+int pid_interval = 100; 
 
 // number of pulse for the shaft to turn one cycle
 double shaft_ppr = ppr * reduction_ratio; 
 
 // for time difference
-long currentTime = 0;
+unsigned long currentTime = 0;
 
 // --- --- --- close loop --- --- ---
 // PID controller parameters
@@ -55,41 +53,71 @@ float output_one = 0;
 float output_two = 0;
 // --- --- --- --- --- --- --- --- ---
 
+
+bool openLid = false; // a command flag, only valid in CLOSE 
+
 // To be test
 // PID MT1_PID(&actualSpeed_one, &output_one, &targetSpeed_one,Kp, Ki, Kd, DIRECT);
 // QuickPID MT1_PID(&actualSpeed_one, &output_one, &targetSpeed_one);
+
+LinearActInfo lid;
 DCMotor Motor_one(MT1_D1, MT1_D2, MT1_PWM, MT1_HALL_A, MT1_HALL_B, CHAN_MT_ONE, MT_FREQ, RESOL);
 DCMotor Motor_two(MT2_D1, MT2_D2, MT2_PWM, MT2_HALL_A, MT2_HALL_B, CHAN_MT_TWO, MT_FREQ, RESOL);
 
 // cannot find a way to make this in the class
 void IRAM_ATTR motorOneIRQ(){ 
-  if(digitalRead(Motor_one.mt_HALL_A)){
-    Motor_one.motor_pulse_count++;
-  }
-  else{
-    Motor_one.motor_pulse_count--;
-  }
+    if(digitalRead(Motor_one.mt_HALL_A)){
+        Motor_one.motor_pulse_count++;
+    }
+    else{
+        Motor_one.motor_pulse_count--;
+    }
 }
 
 void IRAM_ATTR motorTwoIRQ(){
-  if(digitalRead(Motor_two.mt_HALL_A)){
-    Motor_two.motor_pulse_count++;
-  }
-  else{
-    Motor_two.motor_pulse_count--;
-  }
+    if(digitalRead(Motor_two.mt_HALL_A)){
+        Motor_two.motor_pulse_count++;
+    }
+    else{
+        Motor_two.motor_pulse_count--;
+    }
 }
 
 void setupMotorInterrupt(){
-  attachInterrupt(digitalPinToInterrupt(Motor_one.mt_HALL_B), motorOneIRQ, RISING);
-  attachInterrupt(digitalPinToInterrupt(Motor_two.mt_HALL_B), motorTwoIRQ, RISING);
+    attachInterrupt(digitalPinToInterrupt(Motor_one.mt_HALL_B), motorOneIRQ, RISING);
+    attachInterrupt(digitalPinToInterrupt(Motor_two.mt_HALL_B), motorTwoIRQ, RISING);
 }
 
 void setupLinearActuator(){
     pinMode(Ln_Act_D1, OUTPUT);
     pinMode(Ln_Act_D2, OUTPUT);
     ledcSetup(CHAN_LN_ACT, LA_FREQ, RESOL);
-    ledcAttachPin(CHAN_LN_ACT, CHAN_LN_ACT);
+    ledcAttachPin(Ln_Act_PWM, CHAN_LN_ACT);
+    
+    // maybe there is a way to make it better
+    lid.lidState = CLOSE;
+    lid.shouldOpen = true;
+    lid.currentTime = 0;
+}
+
+void linearActCtrl(int pwmInputLnAct){
+    if(pwmInputLnAct == 0){ // motor not moving
+        digitalWrite(Ln_Act_D1, LOW);
+        digitalWrite(Ln_Act_D2, LOW);
+        return;
+    }
+    
+    // TODO: need to test
+    if(pwmInputLnAct > 0){ // forward movement
+        digitalWrite(Ln_Act_D1, HIGH);
+        digitalWrite(Ln_Act_D2, LOW);
+        ledcWrite(CHAN_LN_ACT, constrain(pwmInputLnAct, 0, MAX_PWM));
+    }
+    else{ // backward movement
+        digitalWrite(Ln_Act_D1, LOW);
+        digitalWrite(Ln_Act_D2, HIGH);
+        ledcWrite(CHAN_LN_ACT, -constrain(pwmInputLnAct, -MAX_PWM, 0));
+    }
 }
 
 // update output values
@@ -118,6 +146,7 @@ void PID_compute(){
     output_one = Kp * error_one + Ki * integral_one + Kd * derivative_one;
     output_two = Kp * error_two + Ki * integral_two + Kd * derivative_two;
     
+    // windup prevent windup
     if(output_one > MAX_PWM || output_one < (-1)*MAX_PWM){
       integral_one -= error_one;
     }
@@ -133,20 +162,13 @@ void PID_compute(){
     // output PWM signal, control motor speed
     Motor_one.motorCtrl((int)round(output_one));
     Motor_two.motorCtrl((int)round(output_two));
-    // Serial.printf("error_one: %f, integral: %f, output_one: %f\n", error_one, integral_one, output_one);
+    Serial.printf("error_one: %f, integral: %f, output_one: %f\n", error_one, integral_one, output_one);
     
     // update error
     previousError_one = error_one;
     previousError_two = error_two;
 
-
-    // Serial.print("RPM_A: ");
-    // Serial.print(actualSpeed_one);
-    // Serial.printf(" targetSpeed_one: %f", targetSpeed_one);
-    // // Serial.print("   RPM_B: ");
-    // // Serial.println(actualSpeed_two);
-    // Serial.println("--- --- ---");
-
+    // update time
     currentTime = millis() + pid_interval;
 }
 
@@ -156,8 +178,8 @@ void stopDCMotor(){
 }
 
 void setTargetSpeed(double MTOneSpeed, double MTTwoSspeed){
-  targetSpeed_one = constrain(MTOneSpeed, -max_speed, max_speed);
-  targetSpeed_two = constrain(MTTwoSspeed, -max_speed, max_speed);
+    targetSpeed_one = constrain(MTOneSpeed, -max_speed, max_speed);
+    targetSpeed_two = constrain(MTTwoSspeed, -max_speed, max_speed);
 }
 
 
@@ -179,6 +201,51 @@ void setTargetSpeed(double MTOneSpeed, double MTTwoSspeed){
 //     Motor_two.motorCtrl((int)round(output_two));
 // }
 
+void checkLid(){
+    switch(lid.lidState){
+        case OPEN:
+            openLid = false;
+            lid.shouldOpen = false;
+            if(millis() - lid.currentTime > LID_TIME){ // if open is long enough
+                lid.lidState = TRANS;
+                lid.currentTime = millis();
+            }
+            break;
+        case TRANS:
+            openLid = false;
+            if(millis() - lid.currentTime <= LID_TRANS_TIME){ // we can make trans time longer
+                if(lid.shouldOpen){ // determine if is open or closing
+                    linearActCtrl(-200);
+                }
+                else{
+                    linearActCtrl(200);
+                }
+            }
+            else{
+                // we can make the transition smoother if needed 
+                linearActCtrl(0); 
+                lid.currentTime = millis();
+                if(lid.shouldOpen){
+                    lid.lidState = OPEN;
+                }
+                else{
+                    lid.lidState = CLOSE;
+                }
+            }
+            break;
+        case CLOSE: // lid is in close state
+            lid.currentTime = millis();
+            lid.shouldOpen = true;
+            lid.lidState = CLOSE;
+            if(openLid){
+                lid.lidState = TRANS;
+            }
+            break;
+        default:
+            break;
+    }
+    // Serial.println(lid.lidState);
+}
 
 /********************************* DEBUG **************************************/
 
@@ -202,94 +269,111 @@ long arg1;
 long arg2;
 bool moving;
 
+void parseCmd(){
+    while (Serial.available() > 0){
+        // Read the next character
+        chr = Serial.read();
+
+        // Terminate a command with a CR
+        if (chr == 13){ // '\r'
+            if (arg == 1) {
+                argv1[index_] = 0 ;//NULL;
+            }
+            else if (arg == 2) {
+                argv2[index_] = 0; //NULL;
+            }
+            
+            // -----------------------------------------------------
+            if(cmd == 'm'){ // motor: m
+                setTargetTicksPerFrame(atoi(argv1),atoi(argv2));
+            }
+            
+            if(cmd == 'l'){ // linear actuator: l
+                if(lid.lidState == CLOSE){
+                    openLid = true;
+                }
+            }
+            resetCommand();
+            // -----------------------------------------------------
+
+        }
+        // Use spaces to delimit parts of the command
+        else if (chr == ' '){
+            // Step through the arguments
+            if (arg == 0) {arg = 1;}
+            else if (arg == 1){
+                argv1[index_] = NULL;
+                arg = 2;
+                index_ = 0;
+            }
+            continue;
+        }
+        else{
+            if (arg == 0){
+                // The first arg is the single-letter command
+                cmd = chr;
+            }
+            else if (arg == 1){
+                // Subsequent arguments can be more than one character
+                argv1[index_] = chr;
+                index_++;
+            }
+            else if (arg == 2){
+                argv2[index_] = chr;
+                index_++;
+            }
+        }
+    }
+}
+
+
 /* Clear the current command parameters */
 void resetCommand() {
-  cmd = 0 ; //NULL;
-  memset(argv1, 0, sizeof(argv1));
-  memset(argv2, 0, sizeof(argv2));
-  arg1 = 0;
-  arg2 = 0;
-  arg = 0;
-  index_ = 0;
+    cmd = 0 ; //NULL;
+    memset(argv1, 0, sizeof(argv1));
+    memset(argv2, 0, sizeof(argv2));
+    arg1 = 0;
+    arg2 = 0;
+    arg = 0;
+    index_ = 0;
 }
 
 void setTargetTicksPerFrame(int left, int right)
 {
-  if (left == 0 && right == 0)
-  {
-    Motor_one.motorCtrl(0);
-    Motor_two.motorCtrl(0);
-    moving = 0;
-  }
-  else
-  {
-    moving = 1;
-  }
-  targetSpeed_one = left;
-  targetSpeed_two = right;
+    if (left == 0 && right == 0)
+    {
+        Motor_one.motorCtrl(0);
+        Motor_two.motorCtrl(0);
+        moving = 0;
+    }
+    else
+    {
+        moving = 1;
+    }
+    targetSpeed_one = left;
+    targetSpeed_two = right;
 }
 
 /* Command format: m mt1_speed mt2_speed */
 void plotData() {
-  while (Serial.available() > 0)
-  {
+    parseCmd();
+    // compute pid periodically
+    if(moving==1){
+        PID_compute();
+        // QuickPID_Compute();
 
-    // Read the next character
-    chr = Serial.read();
-    // Terminate a command with a CR
-    if (chr == 13){ // '\r'
-      if (arg == 1) {
-        argv1[index_] = 0 ;//NULL;
-      }
-      else if (arg == 2) {
-        argv2[index_] = 0; //NULL;
-      }
-      setTargetTicksPerFrame(atoi(argv1),atoi(argv2));
-      resetCommand();
+        /*********   comment out if not in debug set up ***********/
+        /*********   the ":" and "," should not be comment out if in plotting ***********/
+
+        // for debug purpose: compare the actual speed to target
+        // Serial.print("Left_Encoder_value:");
+        Serial.print("Detected_Speed");
+        Serial.print(actualSpeed_one);
+        Serial.print(",");
+        // Serial.print("Target_encoder:");
+        Serial.print("Target_Speed");
+        Serial.println(targetSpeed_one);
+        /******** comment out the code once PID param tuning is done *********/
     }
-    // Use spaces to delimit parts of the command
-    else if (chr == ' '){
-      // Step through the arguments
-      if (arg == 0) {arg = 1;}
-      else if (arg == 1){
-        argv1[index_] = NULL;
-        arg = 2;
-        index_ = 0;
-      }
-      continue;
-    }
-    else{
-      if (arg == 0){
-        // The first arg is the single-letter command
-        cmd = chr;
-      }
-      else if (arg == 1){
-        // Subsequent arguments can be more than one character
-        argv1[index_] = chr;
-        index_++;
-      }
-      else if (arg == 2){
-        argv2[index_] = chr;
-        index_++;
-      }
-    }
-  }
-
-  // compute pid periodically
-  if(moving==1){
-    PID_compute();
-    // QuickPID_Compute();
-
-    /*********   comment out if not in debug set up ***********/
-    /*********   the ":" and "," should not be comment out if in plotting ***********/
-
-    // for debug purpose: compare the actual speed to target
-    Serial.print("Left_Encoder_value:");
-    Serial.print(actualSpeed_one);
-    Serial.print(",");
-    Serial.print("Target_encoder:");
-    Serial.println(targetSpeed_one);
-    /******** comment out the code once PID param tuning is done *********/
-  }
 }
 #endif

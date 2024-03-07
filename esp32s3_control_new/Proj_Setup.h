@@ -61,26 +61,29 @@
 #define CHAN_MT_TWO 2
 #define CHAN_LN_ACT 3
 
-#define RESOL   8
-
-// motor channel frequency, this may not work
-#define MT_FREQ 200
-
-// linear actuator frequency
-#define LA_FREQ 200
-
+#define RESOL   8                 // resolution of the PWM signal
+#define MT_FREQ 200               // motor channel frequency, this may not work
+#define LA_FREQ 200               // linear actuator frequency
 #define MAX_PWM pow(2, RESOL)-1   // the max duty cycle
+#define LID_TIME 10000            // the lid will open for 10 sec, for testing purpose
+#define LID_TRANS_TIME 6500       // the lid transition time will be 6 sec
 
-// set up the linear actuator
-void setupLinearActuator();
+enum lidStateEnum {OPEN=0, TRANS=1, CLOSE=2}; // the state of the lid
+
+typedef struct LinearActInfo{
+    lidStateEnum lidState;
+    bool shouldOpen;
+    unsigned long currentTime;
+} LinearActInfo;
+
 
 // set up interrupt for the motors
 void setupMotorInterrupt();
 
-// motor controls
-void linear_act_Ctrl(float pwmInputLnAct); // need to figure this out
+// set up the linear actuator
+void setupLinearActuator();
+void linearActCtrl(int pwmInputLnAct); // need to figure this out
 
-void PID_Init();
 // compute PID
 void PID_compute();
 
@@ -88,14 +91,20 @@ void PID_compute();
 void stopDCMotor();
 
 // set speed
-void setTargetSpeed(double MTOneSpeed, double MTTwoSspeed);
-
-// for debug
-void plotData();
-void resetCommand();
-void setTargetTicksPerFrame(int left, int right);
+void setTargetSpeed(float MTOneSpeed, float MTTwoSspeed);
 
 void QuickPID_Init();
 void QuickPID_Compute();
+
+void checkLid();
+
+// for debug
+void plotData();
+void parseCmd();
+void resetCommand();
+void setTargetTicksPerFrame(int left, int right);
+
+
+// ------ for testing ------
 
 #endif
