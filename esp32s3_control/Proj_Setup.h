@@ -2,11 +2,11 @@
 #define _PROJ_SETUP_H_
 
 #include <Arduino.h>
-#include "esp32-hal-ledc.h"
+#include <QuickPID.h>
+#include "DCMotor.h"
 
 #define TESTING 1
 #define DEBUG 1
-// #include "Proj_Debug.h"
 
 /**
   * DC Motor Control 
@@ -69,29 +69,18 @@
 #define LA_FREQ 200
 
 #define MAX_PWM pow(2, RESOL)-1   // the max duty cycle
-#define MIN_PWM MAX_PWM/5         // the min duty cycle, the motor will not move, if the duty cycle is lower
-
-// motor hall encoder interrupt handler
-void IRAM_ATTR motorOnePulseIRQ();
-void IRAM_ATTR motorTwoPulseIRQ();
-
-// set up gear motor one 
-void setupMotorOne();
-
-// set up gear motor two
-void setupMotorTwo();
 
 // set up the linear actuator
 void setupLinearActuator();
 
 // set up everything
-void setupAllMotors();
+void setupMotorInterrupt();
 
 // motor controls
-void motor_one_Ctrl(float pwmInputOne);
-void motor_two_Ctrl(float pwmInputTwo);
 void linear_act_Ctrl(float pwmInputLnAct); // need to figure this out
 
+
+void PID_Init();
 // compute PID
 void PID_compute();
 
@@ -105,5 +94,8 @@ void setTargetSpeed(double MTOneSpeed, double MTTwoSspeed);
 void plotData();
 void resetCommand();
 void setTargetTicksPerFrame(int left, int right);
+
+void QuickPID_Init();
+void QuickPID_Compute();
 
 #endif

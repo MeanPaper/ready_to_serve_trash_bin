@@ -1,17 +1,13 @@
 #include <Arduino.h>
 // #include <WiFi.h>
 // #include <ESPAsyncWebServer.h>
-
+#include "Proj_Setup.h"
 #define DEBUG 0
 
 #if (DEBUG)
-// #include "Proj_Debug.h"
 #else
 
-#include "Proj_Setup.h"
-
 #endif
-// #include "Proj_Debug.h"
 
 // const char * ssid = "The Retreat";
 // const char * pass = NULL;
@@ -49,12 +45,9 @@ void setup(void) {
 	// server.begin();
 
 	// setupAllMotors();
-	setupMotorOne();
+	// setupMotorOne();
 
-
-	// debug_pins_basic();
-	// debug_pins_setup_full();
-	
+	setupMotorInterrupt();
 	setTargetTicksPerFrame(0,0);
 
 }
