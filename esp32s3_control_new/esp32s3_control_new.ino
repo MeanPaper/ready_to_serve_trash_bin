@@ -3,8 +3,9 @@
 // #include <ESPAsyncWebServer.h>
 #include "Proj_Setup.h"
 
-// const char * ssid = "The Retreat";
-// const char * pass = NULL;
+// need to register to UIUC network
+const char * ssid = "The Retreat";
+const char * pass = NULL;
 
 // AsyncWebServer server(80); // use port 80, http
 
@@ -41,23 +42,16 @@ void setup(void) {
 	stopDCMotor();
 	setupMotorInterrupt();
     setupLinearActuator();
-
+    QuickPID_Init();
 	// for debug
 	setTargetTicksPerFrame(0,0);
 }
 
-String line = "";
 void loop(void) {
   	// PID_compute();
-	// plotData();
+	plotData();
 	// parseCmd();
 	// checkLid();
-
-    // while(Serial.available()){
-    //     line = Serial.readString();
-    // }
-    // Serial.println("GG");
-    // Serial.println(line);
     
 }
 

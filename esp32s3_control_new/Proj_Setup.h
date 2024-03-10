@@ -6,7 +6,7 @@
 #include <QuickPID.h>
 #include "DCMotor.h"
 
-#define TESTING 1
+#define TESTING 0
 #define DEBUG 1
 
 /**
@@ -76,7 +76,6 @@ typedef struct LinearActInfo{
     unsigned long currentTime;
 } LinearActInfo;
 
-
 // set up interrupt for the motors
 void setupMotorInterrupt();
 
@@ -93,16 +92,16 @@ void stopDCMotor();
 // set speed
 void setTargetSpeed(float MTOneSpeed, float MTTwoSspeed);
 
+// Quick PID helper functions
 void QuickPID_Init();
 void QuickPID_Compute();
 
 void checkLid();
 
 // the functions below are for debugging and testing
-void plotData();  // plotting data for PID tunning
-void parseCmd();  // parse serial command, for motor: m one_speed two_speed, for linear actuator: l
-void resetCommand();  // clear the command
+void plotData();        // plotting data for PID tunning
+void parseCmd();        // parse serial command, for motor: m one_speed two_speed, for linear actuator: l
+void resetCommand();    // clear the command
 void setTargetTicksPerFrame(int left, int right); 
-
 
 #endif

@@ -21,20 +21,25 @@ int pid_interval = 100;
 // number of pulse for the shaft to turn one cycle
 double shaft_ppr = ppr * reduction_ratio; 
 
+double speed_constant = 60 * (1000 / pid_interval) / shaft_ppr;
 // for time difference
 unsigned long currentTime = 0;
 
 // --- --- --- close loop --- --- ---
 // PID controller parameters
 #if (TESTING)
-float Kp = 0.15;       // proportional
-float Ki = 0.75;       // integral
-float Kd = 0.05;       // differential
+// float Kp_one = 1;           // proportional
+// float Ki_one = 1.5;         // integral
+// float Kd_one = 0.0001;      // differential
 #else
-/* pending... need to be adjust */
-float Kp = 0.05;   // proportional
-float Ki = 0.05;   // integral
-float Kd = 0;      // differential
+
+float Kp_one = 0.9;        // proportional
+float Ki_one = 1.25;           // integral
+float Kd_one = 0.0008;      // differential
+
+float Kp_two = 0.9;        // proportional
+float Ki_two = 1.25;           // integral
+float Kd_two = 0.0008;      // differential
 #endif
 
 // target speed and current speed
@@ -42,6 +47,8 @@ float targetSpeed_one = 0.0;
 float actualSpeed_one = 0.0;   
 float targetSpeed_two = 0.0; 
 float actualSpeed_two = 0.0;
+float prevSpeed_one = 0.0;
+float prevSpeed_two = 0.0;
 
 // PID controller output and variables
 float previousError_one = 0.0;
@@ -55,10 +62,11 @@ float output_two = 0;
 
 // a command flag, only valid in CLOSE, for opening the lid
 bool openLid = false; 
+bool quick_pid_update;
 
 // To be test
-// PID MT1_PID(&actualSpeed_one, &output_one, &targetSpeed_one,Kp, Ki, Kd, DIRECT);
-// QuickPID MT1_PID(&actualSpeed_one, &output_one, &targetSpeed_one);
+QuickPID MT1_PID(&actualSpeed_one, &output_one, &targetSpeed_one);
+QuickPID MT2_PID(&actualSpeed_two, &output_two, &targetSpeed_two);
 
 LinearActInfo lid;
 DCMotor Motor_one(MT1_D1, MT1_D2, MT1_PWM, MT1_HALL_A, MT1_HALL_B, CHAN_MT_ONE, MT_FREQ, RESOL);
@@ -67,6 +75,7 @@ DCMotor Motor_two(MT2_D1, MT2_D2, MT2_PWM, MT2_HALL_A, MT2_HALL_B, CHAN_MT_TWO, 
 // DC motor hall encoder interrupt handler
 void IRAM_ATTR motorOneIRQ(){ 
     if(digitalRead(Motor_one.mt_HALL_A)){
+        // if(Motor_one.cw)
         Motor_one.motor_pulse_count++;
     }
     else{
@@ -144,8 +153,8 @@ void PID_compute(){
     double derivative_two = error_two - previousError_two;
 
     // compute pid output
-    output_one = Kp * error_one + Ki * integral_one + Kd * derivative_one;
-    output_two = Kp * error_two + Ki * integral_two + Kd * derivative_two;
+    output_one = Kp_one * error_one + Ki_one * integral_one + Kd_one * derivative_one;
+    output_two = Kp_two * error_two + Ki_two * integral_two + Kd_two * derivative_two;
     
     // windup prevent windup
     if(output_one > MAX_PWM || output_one < (-1)*MAX_PWM){
@@ -163,7 +172,7 @@ void PID_compute(){
     // output PWM signal, control motor speed
     Motor_one.motorCtrl((int)round(output_one));
     Motor_two.motorCtrl((int)round(output_two));
-    Serial.printf("error_one: %f, integral: %f, output_one: %f\n", error_one, integral_one, output_one);
+    // Serial.printf("error_one: %f, integral: %f, output_one: %f\n", error_one, integral_one, output_one);
     
     // update error
     previousError_one = error_one;
@@ -179,27 +188,49 @@ void stopDCMotor(){
 }
 
 void setTargetSpeed(float MTOneSpeed, float MTTwoSspeed){
+    // Motor_one.ccw = MTOneSpeed >= 0;
+    // Motor_two.ccw = MTOneSpeed >= 0;
+    // targetSpeed_one = abs(constrain(MTOneSpeed, -max_speed, max_speed));
+    // targetSpeed_two = abs(constrain(MTTwoSspeed, -max_speed, max_speed));
     targetSpeed_one = constrain(MTOneSpeed, -max_speed, max_speed);
     targetSpeed_two = constrain(MTTwoSspeed, -max_speed, max_speed);
 }
 
-
 void QuickPID_Init(){
-    MT1_PID.SetTunings(Kp, Ki, Kd);
+    MT1_PID.SetTunings(Kp_one, Ki_one, Kd_one);
+    MT1_PID.SetSampleTimeUs(pid_interval * 1000);
     MT1_PID.SetMode(MT1_PID.Control::automatic);
-    MT1_PID.SetOutputLimits(-MAX_PWM, MAX_PWM);
+    MT1_PID.SetOutputLimits((float)(MAX_PWM) * (-1), (float)(MAX_PWM));
+
+    MT2_PID.SetTunings(Kp_two, Ki_two, Kd_two);
+    MT2_PID.SetSampleTimeUs(pid_interval * 1000);
+    MT2_PID.SetMode(MT2_PID.Control::automatic);
+    MT2_PID.SetOutputLimits((float)(MAX_PWM) * (-1), (float)(MAX_PWM));
 }
 
+// this mind need to fixed later, it is ok for now
 void QuickPID_Compute(){
+
+    // ------ critical section begin -------
     // compute motor two speed, unit = revolutions per min
-    actualSpeed_two = (float)((Motor_two.motor_pulse_count / shaft_ppr) * 60 * (1000 / pid_interval));
+    noInterrupts();
+    prevSpeed_two = (actualSpeed_two > 1 || actualSpeed_two < -1) ? actualSpeed_two : prevSpeed_two;
+    // actualSpeed_two = (float)((abs(Motor_two.motor_pulse_count) / shaft_ppr) * 60 * (1000 / pid_interval));
+    actualSpeed_two = (float)(Motor_two.motor_pulse_count) * speed_constant ;
     Motor_two.motor_pulse_count = 0; 
     // compute motor one speed, unit = revolutions per min
-    actualSpeed_one = (float)((Motor_one.motor_pulse_count / shaft_ppr) * 60 * (1000 / pid_interval));
+    prevSpeed_one = (actualSpeed_one > 1 || actualSpeed_one < -1) ? actualSpeed_one : prevSpeed_one;
+    // actualSpeed_one = (float)((abs(Motor_one.motor_pulse_count) / shaft_ppr) * 60 * (1000 / pid_interval));
+    actualSpeed_one = (float)(Motor_one.motor_pulse_count) * speed_constant;
     Motor_one.motor_pulse_count = 0;
+    interrupts();
+    // ------ critical section end -------
+    
     MT1_PID.Compute();
-    Motor_one.motorCtrl((int)round(output_one));
-    Motor_two.motorCtrl((int)round(output_two));
+    MT2_PID.Compute();
+
+    Motor_one.motorCtrl((int)(round(output_one)));
+    Motor_two.motorCtrl((int)(round(output_two)));
 }
 
 void checkLid(){
@@ -223,7 +254,6 @@ void checkLid(){
                 }
             }
             else{
-                // we can make the transition smoother if needed 
                 linearActCtrl(0); 
                 lid.currentTime = millis();
                 if(lid.shouldOpen){
@@ -245,13 +275,13 @@ void checkLid(){
         default:
             break;
     }
-    // Serial.println(lid.lidState);
 }
 
 /********************************* DEBUG **************************************/
 
 #if(DEBUG)
 // A pair of varibles to help parse serial commands (thanks Fergs)
+#define NOT_CONSIDER 1
 int arg = 0;
 int index_ = 0;
 
@@ -269,6 +299,7 @@ char argv2[16];
 long arg1;
 long arg2;
 bool moving;
+unsigned long stop_time = 0;
 
 void parseCmd(){
     while (Serial.available() > 0){
@@ -342,43 +373,47 @@ void resetCommand() {
 void setTargetTicksPerFrame(int left, int right)
 {
     if (left == 0 && right == 0)
-    {
-        Motor_one.motorCtrl(0);
-        Motor_two.motorCtrl(0);
+    {   
+        stop_time = millis();
+        setTargetSpeed(0,0);
         moving = 0;
     }
     else
     {
         moving = 1;
     }
-    targetSpeed_one = left;
-    targetSpeed_two = right;
+    setTargetSpeed(left, right);
 }
 
 /* Command format: m mt1_speed mt2_speed */
 void plotData() {
     parseCmd();
-    // compute pid periodically
-    if(moving==1){
-        PID_compute();
-        // QuickPID_Compute();
+    
+    if(!moving && millis() - stop_time > 1000){
+        Motor_one.motorCtrl(0);
+        Motor_two.motorCtrl(0);
+    }
+    else{
+        QuickPID_Compute();
 
         /*********   comment out if not in debug set up ***********/
         /*********   the ":" and "," should not be comment out if in plotting ***********/
+        // Serial.printf("output_one:");
+        // Serial.print(output_one);
+        // Serial.print(",");
+        // Serial.print("Detected_one:");
+        // Serial.print(actualSpeed_one > NOT_CONSIDER || actualSpeed_one < -NOT_CONSIDER ? actualSpeed_one: prevSpeed_one);
+        // Serial.print(",");
+        // Serial.print("Target_one:");
+        // Serial.println(targetSpeed_one);
 
-        // for debug purpose: compare the actual speed to target
-        // Serial.print("Left_Encoder_value:");
-        Serial.print("Detected_one");
-        Serial.print(actualSpeed_one);
+        Serial.printf("output_two:");
+        Serial.print(output_two);
         Serial.print(",");
-        // Serial.print("Target_encoder:");
-        Serial.print("Target_one");
-        Serial.println(targetSpeed_one);
-
-        Serial.print("Detected_two");
-        Serial.print(actualSpeed_two);
+        Serial.print("Detected_two:");
+        Serial.print(actualSpeed_two > NOT_CONSIDER || actualSpeed_two < -NOT_CONSIDER ? actualSpeed_two: prevSpeed_two);
         Serial.print(",");
-        Serial.print("Target_two");
+        Serial.print("Target_one:");
         Serial.println(targetSpeed_two);
         /******** comment out the code once PID param tuning is done *********/
     }

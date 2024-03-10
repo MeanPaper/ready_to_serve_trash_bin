@@ -9,20 +9,21 @@
 class DCMotor{
 private:
     // variables use for motor control
-    int mt_D1;  // direction control one
-    int mt_D2;  // direction control two
-    // int mt_PWM; // current pwm of the motor
-    int ledc_channel; // pwm channel for the motor
-    int mt_resol;   // pwm resolution
-    int mt_freq;    // pwm frequency
-    int max_pwm;    // max pwm value
+    int mt_D1;          // direction control one
+    int mt_D2;          // direction control two
+    // int mt_PWM;      // current pwm of the motor
+    int ledc_channel;   // pwm channel for the motor
+    int mt_resol;       // pwm resolution
+    int mt_freq;        // pwm frequency
+    int max_pwm;        // max pwm value
 
 public:
     
     // for motor speed sensing
     volatile long motor_pulse_count = 0;
-    // float target_speed = 0;
-    
+    // unsigned long prev_pulse = 0;
+    // bool ccw = true;
+
     int mt_HALL_A; // hall sensor phase A
     int mt_HALL_B; // hall sensor phase B
 

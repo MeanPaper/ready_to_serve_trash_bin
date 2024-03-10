@@ -25,7 +25,6 @@ DCMotor::~DCMotor(){}
 
 // motor control logic
 void DCMotor::motorCtrl(int pwmInput){
-    // Serial.print("Run\n");
     // motor is not moving
     if(pwmInput == 0){
         digitalWrite(mt_D1, LOW);
@@ -45,7 +44,18 @@ void DCMotor::motorCtrl(int pwmInput){
         digitalWrite(mt_D2, LOW);
         ledcWrite(ledc_channel, (-1)*constrain(pwmInput, -max_pwm, 0));
     }
-    
+    // ledcWrite(ledc_channel, constrain(abs(pwmInput), 0, max_pwm));
+    // if(ccw){
+    //     digitalWrite(mt_D1, LOW);
+    //     digitalWrite(mt_D2, HIGH);
+    //     // MIN_PWM <= pwmIntA <= MAX_PWM
+    //     // ledcWrite(ledc_channel, constrain(pwmInput, 0, max_pwm));
+    // }
+    // else{
+    //     digitalWrite(mt_D1, HIGH);
+    //     digitalWrite(mt_D2, LOW);
+    //     // ledcWrite(ledc_channel, (-1)*constrain(pwmInput, -max_pwm, 0));
+    // }
 }
 
 
