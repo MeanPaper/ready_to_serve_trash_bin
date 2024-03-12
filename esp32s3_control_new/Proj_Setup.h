@@ -70,6 +70,12 @@
 
 enum lidStateEnum {OPEN=0, TRANS=1, CLOSE=2}; // the state of the lid
 
+// tentative states
+// LID: block all the set speed operation
+enum binState {STOP=0, FORWARD=1, BACKWARD=2, LEFT=3, RIGHT=4, LID=5};
+
+
+
 typedef struct LinearActInfo{
     lidStateEnum lidState;
     bool shouldOpen;
@@ -92,13 +98,15 @@ void stopDCMotor();
 // set speed
 void setTargetSpeed(float MTOneSpeed, float MTTwoSspeed);
 
+// linear actuator motion
+void setLid();      // issue open lid flag
+void checkLid();
+
 // Quick PID helper functions
 void QuickPID_Init();
 void QuickPID_Compute();
 
-void checkLid();
-
-// the functions below are for debugging and testing
+/***************** DEBUGGING *****************/
 void plotData();        // plotting data for PID tunning
 void parseCmd();        // parse serial command, for motor: m one_speed two_speed, for linear actuator: l
 void resetCommand();    // clear the command

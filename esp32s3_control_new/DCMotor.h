@@ -21,8 +21,6 @@ public:
     
     // for motor speed sensing
     volatile long motor_pulse_count = 0;
-    // unsigned long prev_pulse = 0;
-    // bool ccw = true;
 
     int mt_HALL_A; // hall sensor phase A
     int mt_HALL_B; // hall sensor phase B

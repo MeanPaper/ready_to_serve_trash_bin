@@ -1,16 +1,15 @@
 #include "Proj_Setup.h"
 
-/* set to 1 to use the small motor, for code testing */
 #if TESTING==1
 
 int ppr = 3;
 double reduction_ratio = 235;
-double max_speed = 70; // this is the rpm
+double max_speed = 70;          // max rpm
 
 #else
 
-int ppr = 11; // pulse per revolution... for hall encoder
-double reduction_ratio = 56;  // gear reduction ratio, the denominator
+int ppr = 11;                   // pulse per revolution (hall encoder)
+double reduction_ratio = 56;    // gear reduction ratio, the denominator
 double max_speed = 150;
 
 #endif
@@ -20,10 +19,9 @@ int pid_interval = 100;
 
 // number of pulse for the shaft to turn one cycle
 double shaft_ppr = ppr * reduction_ratio; 
-
 double speed_constant = 60 * (1000 / pid_interval) / shaft_ppr;
-// for time difference
-unsigned long currentTime = 0;
+
+unsigned long currentTime = 0; 
 
 // --- --- --- close loop --- --- ---
 // PID controller parameters
@@ -33,13 +31,13 @@ unsigned long currentTime = 0;
 // float Kd_one = 0.0001;      // differential
 #else
 
-float Kp_one = 0.9;        // proportional
-float Ki_one = 1.25;           // integral
-float Kd_one = 0.0008;      // differential
+float Kp_one = 0.9;             // proportional
+float Ki_one = 1.25;            // integral
+float Kd_one = 0.0008;          // differential
 
-float Kp_two = 0.9;        // proportional
-float Ki_two = 1.25;           // integral
-float Kd_two = 0.0008;      // differential
+float Kp_two = 0.9;
+float Ki_two = 1.25;
+float Kd_two = 0.0008;
 #endif
 
 // target speed and current speed
@@ -62,7 +60,6 @@ float output_two = 0;
 
 // a command flag, only valid in CLOSE, for opening the lid
 bool openLid = false; 
-bool quick_pid_update;
 
 // To be test
 QuickPID MT1_PID(&actualSpeed_one, &output_one, &targetSpeed_one);
@@ -75,7 +72,6 @@ DCMotor Motor_two(MT2_D1, MT2_D2, MT2_PWM, MT2_HALL_A, MT2_HALL_B, CHAN_MT_TWO, 
 // DC motor hall encoder interrupt handler
 void IRAM_ATTR motorOneIRQ(){ 
     if(digitalRead(Motor_one.mt_HALL_A)){
-        // if(Motor_one.cw)
         Motor_one.motor_pulse_count++;
     }
     else{
@@ -130,7 +126,6 @@ void linearActCtrl(int pwmInputLnAct){
     }
 }
 
-// update output values
 void PID_compute(){
     if(millis() < currentTime){
         return;
@@ -188,10 +183,6 @@ void stopDCMotor(){
 }
 
 void setTargetSpeed(float MTOneSpeed, float MTTwoSspeed){
-    // Motor_one.ccw = MTOneSpeed >= 0;
-    // Motor_two.ccw = MTOneSpeed >= 0;
-    // targetSpeed_one = abs(constrain(MTOneSpeed, -max_speed, max_speed));
-    // targetSpeed_two = abs(constrain(MTTwoSspeed, -max_speed, max_speed));
     targetSpeed_one = constrain(MTOneSpeed, -max_speed, max_speed);
     targetSpeed_two = constrain(MTTwoSspeed, -max_speed, max_speed);
 }
@@ -212,17 +203,18 @@ void QuickPID_Init(){
 void QuickPID_Compute(){
 
     // ------ critical section begin -------
-    // compute motor two speed, unit = revolutions per min
     noInterrupts();
+
+    // compute motor two speed, unit = revolutions per min
     prevSpeed_two = (actualSpeed_two > 1 || actualSpeed_two < -1) ? actualSpeed_two : prevSpeed_two;
-    // actualSpeed_two = (float)((abs(Motor_two.motor_pulse_count) / shaft_ppr) * 60 * (1000 / pid_interval));
     actualSpeed_two = (float)(Motor_two.motor_pulse_count) * speed_constant ;
     Motor_two.motor_pulse_count = 0; 
+
     // compute motor one speed, unit = revolutions per min
     prevSpeed_one = (actualSpeed_one > 1 || actualSpeed_one < -1) ? actualSpeed_one : prevSpeed_one;
-    // actualSpeed_one = (float)((abs(Motor_one.motor_pulse_count) / shaft_ppr) * 60 * (1000 / pid_interval));
     actualSpeed_one = (float)(Motor_one.motor_pulse_count) * speed_constant;
     Motor_one.motor_pulse_count = 0;
+
     interrupts();
     // ------ critical section end -------
     
@@ -233,6 +225,9 @@ void QuickPID_Compute(){
     Motor_two.motorCtrl((int)(round(output_two)));
 }
 
+void setLid(){
+    openLid = true;
+}
 void checkLid(){
     switch(lid.lidState){
         case OPEN:
