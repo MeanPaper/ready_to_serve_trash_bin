@@ -72,9 +72,8 @@ enum lidStateEnum {OPEN=0, TRANS=1, CLOSE=2}; // the state of the lid
 
 // tentative states
 // LID: block all the set speed operation
-enum binState {STOP=0, FORWARD=1, BACKWARD=2, LEFT=3, RIGHT=4, LID=5};
-
-
+// YOLO: customized movement from the user, can be diagonal
+enum binState {STOP=0, FORWARD=1, BACKWARD=2, LEFT=3, RIGHT=4, LID=5, YOLO=6};
 
 typedef struct LinearActInfo{
     lidStateEnum lidState;

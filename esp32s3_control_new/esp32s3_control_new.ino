@@ -13,14 +13,14 @@ AsyncWebServer server(80); // use port 80, http
 
 binState current_state = STOP;
 
+long currentDuration = 0;
+
 void handleRoot(AsyncWebServerRequest *);
 void handleStopMotors(AsyncWebServerRequest *);
 void handleSetSpeed(AsyncWebServerRequest *);
 void handleLid(AsyncWebServerRequest *);
-void moveForward(AsyncWebServerRequest *);
-void moveBackward(AsyncWebServerRequest *);
-void LeftTurn(AsyncWebServerRequest *);
-void RightTurn(AsyncWebServerRequest *);
+void moveForwardBackward(AsyncWebServerRequest *);
+void turnLeftRight(AsyncWebServerRequest *);
 
 
 void setup(void) {
@@ -45,9 +45,13 @@ void setup(void) {
 	server.on("/stop_motors", HTTP_POST, handleStopMotors);
 	server.on("/set_speed", HTTP_POST, handleSetSpeed);
     server.on("/set_lid", HTTP_POST, handleLid);
+	server.on("/move", HTTP_POST, moveForwardBackward);
+	server.on("/turn", HTTP_POST, turnLeftRight);
 
     // more services goes here
 	server.begin();
+	
+	current_state = STOP;
 
     // // motors setups
 	// stopDCMotor();
@@ -63,10 +67,11 @@ void loop(void) {
 	// // plotData();
 	// // parseCmd();
 	// // checkLid();
-
     if(current_state == LID){
         checkLid();
     }
+	else{
+	}
 }
 
 // web service handlers
@@ -88,15 +93,24 @@ void handleSetSpeed(AsyncWebServerRequest * request){
     JsonDocument doc;
     String response;
     doc["state"] = current_state;
-
     // LID state, blocking commands
     if(current_state == LID){
         serializeJson(doc, response);
         request->send(200, "application/json", response);
     }
 
+	// for other moving state
 	float speedLeft = 0;
 	float speedRight = 0;
+	long duration = 0; // need to be miliseconds
+
+	// get the control duration
+	if(request->hasParam("duration", true)){
+		duration = request->getParam("duration", true)->value().toInt();
+		currentDuration = max(duration, 0); // guard negative values
+	}
+
+	// get the setting speed 
 	if(request->hasParam("speedLeft", true)){
 		speedLeft = request->getParam("speedLeft", true)->value().toFloat();
 	}
@@ -105,6 +119,7 @@ void handleSetSpeed(AsyncWebServerRequest * request){
 	}
 
     Serial.printf("Left: %f, Right: %f\n", speedLeft, speedRight);
+
 	setTargetSpeed(speedLeft, speedRight);
 
     // return different states
@@ -124,5 +139,94 @@ void handleLid(AsyncWebServerRequest * request){
 }
 
 // more service handlers go here
+void turnLeftRight(AsyncWebServerRequest * request){ // turn the bin left or right
+	Serial.println("Request turn left or right");
+	JsonDocument doc;
+	String response;
 
+	// LID state, blocking commands
+	if(current_state == LID){
+		doc["state"] = LID;
+		serializeJson(doc, response);
+		request->send(200, "application/json", response);
+	}
 
+	float speed = 0;
+	currentDuration = 5000;
+
+	// get the control duration
+	if(request->hasParam("duration", true)){
+		duration = request->getParam("duration", true)->value().toInt();
+		currentDuration = max(duration, 0); // guard negative values
+	}
+
+	// get the setting speed 
+	if(request->hasParam("speed", true)){
+		speed = request->getParam("speed", true)->value().toFloat();
+	}
+
+	// set the speed
+	if(request->hasParam("direction", true)){
+		String direction = request->getParam("direction", true)->value();
+		if(direction == "left"){
+			setTargetSpeed(-speed, speed);
+			current_state = LEFT;
+		}
+		else if(direction == "right"){
+			setTargetSpeed(speed, -speed);
+			current_state = RIGHT;
+		}
+	}
+
+	doc["state"] = current_state;
+
+	// return different states
+	serializeJson(doc, response);
+	request->send(200, "application/json", response);
+}
+
+void moveForwardBackward(AsyncWebServerRequest * request){ // move the bin forward or backward
+	Serial.println("Request move forward or backward");
+	JsonDocument doc;
+	String response;
+
+	// LID state, blocking commands
+	if(current_state == LID){
+		doc["state"] = LID;
+		serializeJson(doc, response);
+		request->send(200, "application/json", response);
+	}
+
+	float speed = 0;
+	currentDuration = 5000;
+
+	// get the control duration
+	if(request->hasParam("duration", true)){
+		duration = request->getParam("duration", true)->value().toInt();
+		currentDuration = max(duration, 0); // guard negative values
+	}
+
+	// get the setting speed 
+	if(request->hasParam("speed", true)){
+		speed = request->getParam("speed", true)->value().toFloat();
+	}
+
+	// set the speed
+	if(request->hasParam("direction", true)){
+		String direction = request->getParam("direction", true)->value();
+		if(direction == "forward"){
+			setTargetSpeed(speed, speed);
+			current_state = FORWARD;
+		}
+		else if(direction == "backward"){
+			setTargetSpeed(-speed, -speed);
+			current_state = BACKWARD;
+		}
+	}
+
+	doc["state"] = current_state;
+
+	// return different states
+	serializeJson(doc, response);
+	request->send(200, "application/json", response);
+}
