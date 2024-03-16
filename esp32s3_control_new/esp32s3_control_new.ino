@@ -2,6 +2,7 @@
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
 #include <ArduinoJson.h>
+#include <unordered_map>
 #include "Proj_Setup.h"
 
 // need to register to UIUC network
@@ -12,16 +13,17 @@ const char * pass = NULL;
 AsyncWebServer server(80); // use port 80, http
 
 binState current_state = STOP;
-
 long currentDuration = 0;
+long recordTime = 0;
 
+// web service handlers
 void handleRoot(AsyncWebServerRequest *);
 void handleStopMotors(AsyncWebServerRequest *);
 void handleSetSpeed(AsyncWebServerRequest *);
 void handleLid(AsyncWebServerRequest *);
 void moveForwardBackward(AsyncWebServerRequest *);
 void turnLeftRight(AsyncWebServerRequest *);
-
+std::string stateToString(binState state);
 
 void setup(void) {
 	Serial.begin(9600);
@@ -63,30 +65,57 @@ void setup(void) {
 
 }
 
+// main loop, cmd executing
 void loop(void) {
 	// // plotData();
 	// // parseCmd();
 	// // checkLid();
-    if(current_state == LID){
-        checkLid();
-    }
-	else{
+
+	switch(current_state){
+		case LID: 
+			// this event reject all the commands until this event finishes
+			if(checkLid() == CLOSE){
+				current_state = STOP;
+			}
+			break;
+		case STOP:
+			stopDCMotor(); // stop all DC motors
+			break;
+
+		case BACKWARD:
+		case FORWARD:
+		case LEFT:
+		case RIGHT:
+			if(millis() - recordTime > currentDuration){
+				Serial.print(stateToString(current_state));
+				Serial.println(" Done");
+				current_state = STOP;
+				stopDCMotor();
+			}
+			break;
+		default: break;
 	}
 }
 
-// web service handlers
+/** web service handlers section **/
+
 void handleRoot(AsyncWebServerRequest * request){ // use this for debugging I guess
 	Serial.println("Request root");
 	request->send(200, "html", "<h1>Welcome to ESP32-S3</h1>");
 }
 
-// // force stop
-void handleStopMotors(AsyncWebServerRequest * request){ // maybe set a flag, rather than this
+// force stop
+void handleStopMotors(AsyncWebServerRequest * request){ // need to think about this...
 	Serial.println("Request stop");
+	// current_state = STOP;
 	stopDCMotor();
 	request->send(200);
+
+	/* the problem with this event, need to store the state info of the lid */
+	/* should it continue execute with the given info ? */
 }
 
+// this function is not finished yet
 void handleSetSpeed(AsyncWebServerRequest * request){
 	Serial.println("Request set speed");
 
@@ -107,7 +136,7 @@ void handleSetSpeed(AsyncWebServerRequest * request){
 	// get the control duration
 	if(request->hasParam("duration", true)){
 		duration = request->getParam("duration", true)->value().toInt();
-		currentDuration = max(duration, 0); // guard negative values
+		currentDuration = max(duration, (long)(0)); // guard negative values
 	}
 
 	// get the setting speed 
@@ -125,6 +154,8 @@ void handleSetSpeed(AsyncWebServerRequest * request){
     // return different states
     serializeJson(doc, response);
     request->send(200, "application/json", response);
+
+	recordTime = millis(); // recording end time
 }
 
 // need to do some adjustment
@@ -146,18 +177,19 @@ void turnLeftRight(AsyncWebServerRequest * request){ // turn the bin left or rig
 
 	// LID state, blocking commands
 	if(current_state == LID){
-		doc["state"] = LID;
+		doc["state"] = stateToString(LID);
 		serializeJson(doc, response);
 		request->send(200, "application/json", response);
 	}
 
 	float speed = 0;
+    long duration = 0;
 	currentDuration = 5000;
 
 	// get the control duration
 	if(request->hasParam("duration", true)){
 		duration = request->getParam("duration", true)->value().toInt();
-		currentDuration = max(duration, 0); // guard negative values
+		currentDuration = max(duration, (long)(0)); // guard negative values
 	}
 
 	// get the setting speed 
@@ -178,11 +210,13 @@ void turnLeftRight(AsyncWebServerRequest * request){ // turn the bin left or rig
 		}
 	}
 
-	doc["state"] = current_state;
+	doc["state"] = stateToString(current_state);;
 
 	// return different states
 	serializeJson(doc, response);
 	request->send(200, "application/json", response);
+
+	recordTime = millis();
 }
 
 void moveForwardBackward(AsyncWebServerRequest * request){ // move the bin forward or backward
@@ -192,18 +226,19 @@ void moveForwardBackward(AsyncWebServerRequest * request){ // move the bin forwa
 
 	// LID state, blocking commands
 	if(current_state == LID){
-		doc["state"] = LID;
+		doc["state"] = stateToString(LID);
 		serializeJson(doc, response);
 		request->send(200, "application/json", response);
 	}
 
 	float speed = 0;
+    long duration = 0;
 	currentDuration = 5000;
 
 	// get the control duration
 	if(request->hasParam("duration", true)){
 		duration = request->getParam("duration", true)->value().toInt();
-		currentDuration = max(duration, 0); // guard negative values
+		currentDuration = max(duration, (long)(0)); // guard negative values
 	}
 
 	// get the setting speed 
@@ -224,9 +259,29 @@ void moveForwardBackward(AsyncWebServerRequest * request){ // move the bin forwa
 		}
 	}
 
-	doc["state"] = current_state;
+	doc["state"] = stateToString(current_state);
 
 	// return different states
 	serializeJson(doc, response);
 	request->send(200, "application/json", response);
+	
+	recordTime = millis();
+}
+
+std::string stateToString(binState state) {
+    static const std::unordered_map<binState, std::string> stateMap = {
+        {binState::LID, "LID"},
+        {binState::STOP, "STOP"},
+        {binState::BACKWARD, "BACKWARD"},
+        {binState::FORWARD, "FORWARD"},
+        {binState::LEFT, "LEFT"},
+        {binState::RIGHT, "RIGHT"}
+    };
+
+    auto it = stateMap.find(state);
+    if (it != stateMap.end()) {
+        return it->second;
+    } else {
+        return "UNKNOWN";
+    }
 }

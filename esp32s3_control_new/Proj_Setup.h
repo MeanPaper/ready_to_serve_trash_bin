@@ -99,7 +99,7 @@ void setTargetSpeed(float MTOneSpeed, float MTTwoSspeed);
 
 // linear actuator motion
 void setLid();      // issue open lid flag
-void checkLid();
+lidStateEnum checkLid();    // check the lid state
 
 // Quick PID helper functions
 void QuickPID_Init();

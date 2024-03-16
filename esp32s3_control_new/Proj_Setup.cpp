@@ -228,7 +228,8 @@ void QuickPID_Compute(){
 void setLid(){
     openLid = true;
 }
-void checkLid(){
+
+lidStateEnum checkLid(){
     switch(lid.lidState){
         case OPEN:
             openLid = false;
@@ -270,6 +271,7 @@ void checkLid(){
         default:
             break;
     }
+    return lid.lidState;
 }
 
 /********************************* DEBUG **************************************/
