@@ -6,8 +6,8 @@
 #include "Proj_Setup.h"
 
 // need to register to UIUC network
-// const char * ssid = "The Retreat";
-const char * ssid = "IllinoisNet_Guest";
+const char * ssid = "The Retreat";
+// const char * ssid = "IllinoisNet_Guest";
 const char * pass = NULL;
 
 AsyncWebServer server(80); // use port 80, http
@@ -28,6 +28,8 @@ std::string stateToString(binState state);
 void setup(void) {
 	Serial.begin(9600);
     // Serial.println(WiFi.macAddress()); // MAC addr: 34:85:18:50:4B:54
+    long temp = millis();
+    while(millis() - temp < 2000);
 
 	// wifi connection
 	WiFi.begin(ssid, pass);
@@ -75,6 +77,7 @@ void loop(void) {
 		case LID: 
 			// this event reject all the commands until this event finishes
 			if(checkLid() == CLOSE){
+                Serial.println("Lid operation done");
 				current_state = STOP;
 			}
 			break;
@@ -87,7 +90,9 @@ void loop(void) {
 		case LEFT:
 		case RIGHT:
 			if(millis() - recordTime > currentDuration){
-				Serial.print(stateToString(current_state));
+                Serial.printf("Current Time: %d\n", millis());
+                Serial.printf("Recorded Time: %d\n", recordTime);
+				Serial.print(stateToString(current_state).c_str());
 				Serial.println(" Done");
 				current_state = STOP;
 				stopDCMotor();
@@ -121,11 +126,13 @@ void handleSetSpeed(AsyncWebServerRequest * request){
 
     JsonDocument doc;
     String response;
-    doc["state"] = current_state;
+    doc["state"] = stateToString(current_state);
     // LID state, blocking commands
     if(current_state == LID){
+        Serial.println("BLOCK: lid is operating");
         serializeJson(doc, response);
         request->send(200, "application/json", response);
+        return;
     }
 
 	// for other moving state
@@ -177,9 +184,11 @@ void turnLeftRight(AsyncWebServerRequest * request){ // turn the bin left or rig
 
 	// LID state, blocking commands
 	if(current_state == LID){
+        Serial.println("BLOCK: lid is operating");
 		doc["state"] = stateToString(LID);
 		serializeJson(doc, response);
 		request->send(200, "application/json", response);
+        return;
 	}
 
 	float speed = 0;
@@ -214,9 +223,8 @@ void turnLeftRight(AsyncWebServerRequest * request){ // turn the bin left or rig
 
 	// return different states
 	serializeJson(doc, response);
-	request->send(200, "application/json", response);
-
 	recordTime = millis();
+	request->send(200, "application/json", response);
 }
 
 void moveForwardBackward(AsyncWebServerRequest * request){ // move the bin forward or backward
@@ -226,9 +234,11 @@ void moveForwardBackward(AsyncWebServerRequest * request){ // move the bin forwa
 
 	// LID state, blocking commands
 	if(current_state == LID){
+        Serial.println("BLOCK: lid is operating");
 		doc["state"] = stateToString(LID);
 		serializeJson(doc, response);
 		request->send(200, "application/json", response);
+        return;
 	}
 
 	float speed = 0;
@@ -263,9 +273,8 @@ void moveForwardBackward(AsyncWebServerRequest * request){ // move the bin forwa
 
 	// return different states
 	serializeJson(doc, response);
-	request->send(200, "application/json", response);
-	
 	recordTime = millis();
+	request->send(200, "application/json", response);
 }
 
 std::string stateToString(binState state) {
