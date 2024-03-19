@@ -152,6 +152,15 @@ void stopDCMotor(){
     targetSpeed_two = 0.0;
 }
 
+/** motorsOff()
+ * turn off h-bridge control for both motors
+*/
+void motorsOff(){
+    Motor_one.motorCtrl(0);
+    Motor_two.motorCtrl(0);
+}
+
+
 /** setTargetSpeed()
  * set the target speed for each DC motor
  * @param MTOneSpeed: target speed for motor one (left)
@@ -373,8 +382,7 @@ void plotData() {
     parseCmd();
     
     if(!moving && millis() - stop_time > 1000){
-        Motor_one.motorCtrl(0);
-        Motor_two.motorCtrl(0);
+        motorsOff();
     }
     else{
         QuickPID_Compute();

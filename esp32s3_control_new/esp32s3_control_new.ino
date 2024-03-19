@@ -80,9 +80,17 @@ void loop(void) {
                 Serial.println("Lid operation done");
 				current_state = STOP;
 			}
+
+			if(millis() - recordTime > 2000){ // turn off h-bridges for dc motors when stop for 2000ms
+				motorsOff();
+			}
+
 			break;
 		case STOP:
 			stopDCMotor(); // stop all DC motors
+			if(millis() - recordTime > 2000){ // turn off h-bridges for dc motors when stop for 2000ms
+				motorsOff();
+			}
 			break;
 
 		case BACKWARD:
@@ -112,10 +120,27 @@ void handleRoot(AsyncWebServerRequest * request){ // use this for debugging I gu
 // force stop
 void handleStopMotors(AsyncWebServerRequest * request){ // need to think about this...
 	Serial.println("Request stop");
-	// current_state = STOP;
-	stopDCMotor();
-	request->send(200);
 
+	JsonDocument doc;
+	String response;	
+
+	if(current_state == LID){
+		Serial.println("In LID state, motors have stop already");
+		doc["state"] = stateToString(LID);
+		serializeJson(doc, response);
+		request->send(200, "application/json", response);
+		return;
+	}
+
+	stopDCMotor();
+
+	// data to the client
+	doc["state"] = stateToString(STOP);
+	current_state = STOP;
+	serializeJson(doc, response);
+
+	recordTime = millis();
+	request->send(200, "application/json", response);
 	/* the problem with this event, need to store the state info of the lid */
 	/* should it continue execute with the given info ? */
 }
@@ -126,10 +151,11 @@ void handleSetSpeed(AsyncWebServerRequest * request){
 
     JsonDocument doc;
     String response;
-    doc["state"] = stateToString(current_state);
+
     // LID state, blocking commands
     if(current_state == LID){
         Serial.println("BLOCK: lid is operating");
+    	doc["state"] = stateToString(LID);
         serializeJson(doc, response);
         request->send(200, "application/json", response);
         return;
@@ -157,23 +183,33 @@ void handleSetSpeed(AsyncWebServerRequest * request){
     Serial.printf("Left: %f, Right: %f\n", speedLeft, speedRight);
 
 	setTargetSpeed(speedLeft, speedRight);
-
-    // return different states
+	
+	current_state = YOLO;
+	doc["state"] = stateToString(current_state);
     serializeJson(doc, response);
-    request->send(200, "application/json", response);
 
 	recordTime = millis(); // recording end time
+
+    request->send(200, "application/json", response);
 }
 
 // need to do some adjustment
 void handleLid(AsyncWebServerRequest * request){
     Serial.println("Request lid operation");
-    
+    JsonDocument doc;
+	String response;
+	
+	// start operations
     stopDCMotor();
-    current_state = LID;
     setLid();
 
-    request->send(200);
+	// response data to the client
+    current_state = LID;
+	doc["state"] = stateToString(current_state);
+	serializeJson(doc, response);
+
+	recordTime = millis();
+    request->send(200, "application/json", response);
 }
 
 // more service handlers go here
@@ -219,7 +255,7 @@ void turnLeftRight(AsyncWebServerRequest * request){ // turn the bin left or rig
 		}
 	}
 
-	doc["state"] = stateToString(current_state);;
+	doc["state"] = stateToString(current_state);
 
 	// return different states
 	serializeJson(doc, response);

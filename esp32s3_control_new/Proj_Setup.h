@@ -85,13 +85,14 @@ typedef struct LinearActInfo{
 /* linear actuator setup and control */
 void setupLinearActuator();				// setup pins for linear actuator
 void linearActCtrl(int pwmInputLnAct);	// set PWM duty cycle for linear actuator
-void setLid();      					// issue open lid flag
+void setLid();      					    // issue open lid flag
 lidStateEnum checkLid();    			// loop and check lid state
 
 /* DC motors control helper functions */
 void setupMotorInterrupt();				// setup hall sensor reading for DC motors (left and right)
-void stopDCMotor();						// stop all DC motors (left and right)
-void setTargetSpeed(float MTOneSpeed, float MTTwoSspeed); // set target speed for left and right motors
+void stopDCMotor();						    // set target speeds of left and right motor to be 0
+void setTargetSpeed(float MTOneSpeed, float MTTwoSspeed);   // set target speed for left and right motors
+void motorsOff();                 // turn off h-bridge control for both motor, real stop
 
 // Quick PID helper functions
 void QuickPID_Init();
