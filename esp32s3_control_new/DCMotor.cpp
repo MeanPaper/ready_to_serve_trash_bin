@@ -21,6 +21,7 @@ DCMotor::DCMotor(int D1, int D2, int PWM, int HALL_A, int HALL_B, int channel, i
     ledcAttachPin(PWM, channel);
 }
 
+// destructor
 DCMotor::~DCMotor(){}
 
 // motor control logic

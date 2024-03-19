@@ -6,6 +6,7 @@
 #include <QuickPID.h>
 #include "DCMotor.h"
 
+/* Testing/debugging environment on/off */
 #define TESTING 0
 #define DEBUG 1
 
@@ -56,11 +57,13 @@
 #define Ln_Act_PWM  15
 
 /* PWM control section */
-// channels
+
+// PWM channels
 #define CHAN_MT_ONE 1
 #define CHAN_MT_TWO 2
 #define CHAN_LN_ACT 3
 
+// PWM control params
 #define RESOL   8                 // resolution of the PWM signal
 #define MT_FREQ 200               // motor channel frequency, this may not work
 #define LA_FREQ 200               // linear actuator frequency
@@ -68,47 +71,38 @@
 #define LID_TIME 30000            // the lid will open for 10 sec, for testing purpose
 #define LID_TRANS_TIME 6500       // the lid transition time will be 6 sec
 
-enum lidStateEnum {OPEN=0, TRANS=1, CLOSE=2}; // the state of the lid
+/* trashbin state info */
+enum lidStateEnum {OPEN=0, TRANS=1, CLOSE=2};	// trash bin lid states
+enum binState {STOP=0, FORWARD=1, BACKWARD=2, LEFT=3, RIGHT=4, LID=5, YOLO=6}; // trash bin states
 
-// tentative states
-// LID: block all the set speed operation
-// YOLO: customized movement from the user, can be diagonal
-enum binState {STOP=0, FORWARD=1, BACKWARD=2, LEFT=3, RIGHT=4, LID=5, YOLO=6};
-
+/* linear actuator control info */
 typedef struct LinearActInfo{
     lidStateEnum lidState;
     bool shouldOpen;
     unsigned long currentTime;
 } LinearActInfo;
 
-// set up interrupt for the motors
-void setupMotorInterrupt();
+/* linear actuator setup and control */
+void setupLinearActuator();				// setup pins for linear actuator
+void linearActCtrl(int pwmInputLnAct);	// set PWM duty cycle for linear actuator
+void setLid();      					// issue open lid flag
+lidStateEnum checkLid();    			// loop and check lid state
 
-// set up the linear actuator
-void setupLinearActuator();
-void linearActCtrl(int pwmInputLnAct); // need to figure this out
-
-// compute PID
-void PID_compute();
-
-// stop dc motors
-void stopDCMotor();
-
-// set speed
-void setTargetSpeed(float MTOneSpeed, float MTTwoSspeed);
-
-// linear actuator motion
-void setLid();      // issue open lid flag
-lidStateEnum checkLid();    // check the lid state
+/* DC motors control helper functions */
+void setupMotorInterrupt();				// setup hall sensor reading for DC motors (left and right)
+void stopDCMotor();						// stop all DC motors (left and right)
+void setTargetSpeed(float MTOneSpeed, float MTTwoSspeed); // set target speed for left and right motors
 
 // Quick PID helper functions
 void QuickPID_Init();
 void QuickPID_Compute();
 
+void PID_compute(); // compute PID, a back up PID control
+
 /***************** DEBUGGING *****************/
 void plotData();        // plotting data for PID tunning
 void parseCmd();        // parse serial command, for motor: m one_speed two_speed, for linear actuator: l
 void resetCommand();    // clear the command
-void setTargetTicksPerFrame(int left, int right); 
+void setTargetTicksPerFrame(int left, int right); // set target speeds and other control param
 
 #endif

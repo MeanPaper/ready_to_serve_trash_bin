@@ -8,7 +8,7 @@ double max_speed = 70;          // max rpm
 
 #else
 
-int ppr = 11;                   // pulse per revolution (hall encoder)
+int ppr = 11;                   // pulse per revolution (hall encoders)
 double reduction_ratio = 56;    // gear reduction ratio, the denominator
 double max_speed = 150;
 
@@ -20,7 +20,6 @@ int pid_interval = 100;
 // number of pulse for the shaft to turn one cycle
 double shaft_ppr = ppr * reduction_ratio; 
 double speed_constant = 60 * (1000 / pid_interval) / shaft_ppr;
-
 unsigned long currentTime = 0; 
 
 // --- --- --- close loop --- --- ---
@@ -31,6 +30,7 @@ unsigned long currentTime = 0;
 // float Kd_one = 0.0001;      // differential
 #else
 
+/* Actual PID global */
 float Kp_one = 0.9;             // proportional
 float Ki_one = 1.25;            // integral
 float Kd_one = 0.0008;          // differential
@@ -40,7 +40,7 @@ float Ki_two = 1.25;
 float Kd_two = 0.0008;
 #endif
 
-// target speed and current speed
+/* target, actual, and previous speed of both DC motors */
 float targetSpeed_one = 0.0;  
 float actualSpeed_one = 0.0;   
 float targetSpeed_two = 0.0; 
@@ -48,12 +48,13 @@ float actualSpeed_two = 0.0;
 float prevSpeed_one = 0.0;
 float prevSpeed_two = 0.0;
 
-// PID controller output and variables
+/* PID computation parameter globals */
 float previousError_one = 0.0;
 float integral_one = 0.0;
 float previousError_two = 0.0;
 float integral_two = 0.0;
 
+/* PID outputs */
 float output_one = 0;
 float output_two = 0;
 // --- --- --- --- --- --- --- --- ---
@@ -61,15 +62,22 @@ float output_two = 0;
 // a command flag, only valid in CLOSE, for opening the lid
 bool openLid = false; 
 
-// To be test
+/* PID control object for left and right DC motors */
 QuickPID MT1_PID(&actualSpeed_one, &output_one, &targetSpeed_one);
 QuickPID MT2_PID(&actualSpeed_two, &output_two, &targetSpeed_two);
 
+/* linear actuator info */
 LinearActInfo lid;
+
+/* DC motor objects */
 DCMotor Motor_one(MT1_D1, MT1_D2, MT1_PWM, MT1_HALL_A, MT1_HALL_B, CHAN_MT_ONE, MT_FREQ, RESOL);
 DCMotor Motor_two(MT2_D1, MT2_D2, MT2_PWM, MT2_HALL_A, MT2_HALL_B, CHAN_MT_TWO, MT_FREQ, RESOL);
 
-// DC motor hall encoder interrupt handler
+
+/** motorOneIRQ and motorTwoIRQ
+ * Interrupt service routine for motor one and two; reads the hall sensor signal
+ * and increments/decrements the pulse count based on the signal reading
+*/
 void IRAM_ATTR motorOneIRQ(){ 
     if(digitalRead(Motor_one.mt_HALL_A)){
         Motor_one.motor_pulse_count++;
@@ -88,24 +96,35 @@ void IRAM_ATTR motorTwoIRQ(){
     }
 }
 
-// attach interrupt handler to the Motors
+
+/** setupMotorInterrupt()
+ * Allows motor hall sensor to trigger external interrupts on
+ * rising edges of its signals and call the corresponding interrupt service routine.
+*/
 void setupMotorInterrupt(){
     attachInterrupt(digitalPinToInterrupt(Motor_one.mt_HALL_B), motorOneIRQ, RISING);
     attachInterrupt(digitalPinToInterrupt(Motor_two.mt_HALL_B), motorTwoIRQ, RISING);
 }
 
+/** setpuLinearActuator()
+ * set up h-bridge control pins and PWM signal pin for linear actuator
+ * and initialize the linear actuator state
+*/
 void setupLinearActuator(){
     pinMode(Ln_Act_D1, OUTPUT);
     pinMode(Ln_Act_D2, OUTPUT);
     ledcSetup(CHAN_LN_ACT, LA_FREQ, RESOL);
     ledcAttachPin(Ln_Act_PWM, CHAN_LN_ACT);
     
-    // maybe there is a way to make it better
     lid.lidState = CLOSE;
     lid.shouldOpen = true;
     lid.currentTime = 0;
 }
 
+/** linearActCtrl()
+ * control the linear actuator movement based on the PWM signal input
+ * @param pwmInputLnAct: the PWM signal duty cycle for the linear actuator
+*/
 void linearActCtrl(int pwmInputLnAct){
     if(pwmInputLnAct == 0){ // motor not moving
         digitalWrite(Ln_Act_D1, LOW);
@@ -113,7 +132,6 @@ void linearActCtrl(int pwmInputLnAct){
         return;
     }
     
-    // TODO: need to test
     if(pwmInputLnAct > 0){ // forward movement
         digitalWrite(Ln_Act_D1, HIGH);
         digitalWrite(Ln_Act_D2, LOW);
@@ -126,67 +144,28 @@ void linearActCtrl(int pwmInputLnAct){
     }
 }
 
-void PID_compute(){
-    if(millis() < currentTime){
-        return;
-    }
-    // compute motor two speed, unit = revolutions per min
-    actualSpeed_two = (float)((Motor_two.motor_pulse_count / shaft_ppr) * 60 * (1000 / pid_interval));
-    Motor_two.motor_pulse_count = 0;
-
-    // compute motor one speed, unit = revolutions per min
-    actualSpeed_one = (float)((Motor_one.motor_pulse_count / shaft_ppr) * 60 * (1000 / pid_interval));
-    Motor_one.motor_pulse_count = 0;
-
-    // compute error and adjust control
-    double error_one = targetSpeed_one - actualSpeed_one;
-    integral_one += error_one;
-    double derivative_one = error_one - previousError_one;
-
-    double error_two = targetSpeed_two - actualSpeed_two;
-    integral_two += error_two;
-    double derivative_two = error_two - previousError_two;
-
-    // compute pid output
-    output_one = Kp_one * error_one + Ki_one * integral_one + Kd_one * derivative_one;
-    output_two = Kp_two * error_two + Ki_two * integral_two + Kd_two * derivative_two;
-    
-    // windup prevent windup
-    if(output_one > MAX_PWM || output_one < (-1)*MAX_PWM){
-      integral_one -= error_one;
-    }
-
-    if(output_two > MAX_PWM || output_two < (-1)*MAX_PWM){
-      integral_two -= error_two;
-    }
-
-    // constrain output
-    output_one = constrain(output_one, (-1)*MAX_PWM, MAX_PWM);
-    output_two = constrain(output_two, (-1)*MAX_PWM, MAX_PWM);
-
-    // output PWM signal, control motor speed
-    Motor_one.motorCtrl((int)round(output_one));
-    Motor_two.motorCtrl((int)round(output_two));
-    // Serial.printf("error_one: %f, integral: %f, output_one: %f\n", error_one, integral_one, output_one);
-    
-    // update error
-    previousError_one = error_one;
-    previousError_two = error_two;
-
-    // update time
-    currentTime = millis() + pid_interval;
-}
-
+/** stopDCMotor()
+ * set both DC motors target speed to be 0
+*/
 void stopDCMotor(){
     targetSpeed_one = 0.0;
     targetSpeed_two = 0.0;
 }
 
+/** setTargetSpeed()
+ * set the target speed for each DC motor
+ * @param MTOneSpeed: target speed for motor one (left)
+ * @param MTTwoSpeed: target speed for motor two (right)
+*/
 void setTargetSpeed(float MTOneSpeed, float MTTwoSspeed){
     targetSpeed_one = constrain(MTOneSpeed, -max_speed, max_speed);
     targetSpeed_two = constrain(MTTwoSspeed, -max_speed, max_speed);
 }
 
+/** QuickPID_Init()
+ * initialize the PID control object for both DC motors
+ * set the PID control parameters, output limits, sampling rates
+*/
 void QuickPID_Init(){
     MT1_PID.SetTunings(Kp_one, Ki_one, Kd_one);
     MT1_PID.SetSampleTimeUs(pid_interval * 1000);
@@ -225,10 +204,17 @@ void QuickPID_Compute(){
     Motor_two.motorCtrl((int)(round(output_two)));
 }
 
+/** setLid()
+ * set the lid to be open
+*/
 void setLid(){
     openLid = true;
 }
 
+/** checkLid()
+ * check the current state of the lid and control the linear actuator accordingly
+ * @return lidStateEnum: the current state of the lid
+*/
 lidStateEnum checkLid(){
     switch(lid.lidState){
         case OPEN:
@@ -415,4 +401,56 @@ void plotData() {
         /******** comment out the code once PID param tuning is done *********/
     }
 }
+
+void PID_compute(){
+    if(millis() < currentTime){
+        return;
+    }
+    // compute motor two speed, unit = revolutions per min
+    actualSpeed_two = (float)((Motor_two.motor_pulse_count / shaft_ppr) * 60 * (1000 / pid_interval));
+    Motor_two.motor_pulse_count = 0;
+
+    // compute motor one speed, unit = revolutions per min
+    actualSpeed_one = (float)((Motor_one.motor_pulse_count / shaft_ppr) * 60 * (1000 / pid_interval));
+    Motor_one.motor_pulse_count = 0;
+
+    // compute error and adjust control
+    double error_one = targetSpeed_one - actualSpeed_one;
+    integral_one += error_one;
+    double derivative_one = error_one - previousError_one;
+
+    double error_two = targetSpeed_two - actualSpeed_two;
+    integral_two += error_two;
+    double derivative_two = error_two - previousError_two;
+
+    // compute pid output
+    output_one = Kp_one * error_one + Ki_one * integral_one + Kd_one * derivative_one;
+    output_two = Kp_two * error_two + Ki_two * integral_two + Kd_two * derivative_two;
+    
+    // windup prevent windup
+    if(output_one > MAX_PWM || output_one < (-1)*MAX_PWM){
+      integral_one -= error_one;
+    }
+
+    if(output_two > MAX_PWM || output_two < (-1)*MAX_PWM){
+      integral_two -= error_two;
+    }
+
+    // constrain output
+    output_one = constrain(output_one, (-1)*MAX_PWM, MAX_PWM);
+    output_two = constrain(output_two, (-1)*MAX_PWM, MAX_PWM);
+
+    // output PWM signal, control motor speed
+    Motor_one.motorCtrl((int)round(output_one));
+    Motor_two.motorCtrl((int)round(output_two));
+    // Serial.printf("error_one: %f, integral: %f, output_one: %f\n", error_one, integral_one, output_one);
+    
+    // update error
+    previousError_one = error_one;
+    previousError_two = error_two;
+
+    // update time
+    currentTime = millis() + pid_interval;
+}
+
 #endif

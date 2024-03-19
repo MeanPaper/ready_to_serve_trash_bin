@@ -11,11 +11,11 @@ private:
     // variables use for motor control
     int mt_D1;          // direction control one
     int mt_D2;          // direction control two
-    // int mt_PWM;      // current pwm of the motor
     int ledc_channel;   // pwm channel for the motor
     int mt_resol;       // pwm resolution
     int mt_freq;        // pwm frequency
     int max_pwm;        // max pwm value
+    // int mt_PWM;      // current pwm of the motor
 
 public:
     
