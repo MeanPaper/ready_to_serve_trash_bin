@@ -103,6 +103,7 @@ void loop(void) {
 		case RIGHT:
 		case YOLO:
 			// QuickPID_Compute();
+			// speedAutoAdjust();
 			if(millis() - recordTime > currentDuration){
                 Serial.printf("Current Time: %d\n", millis());
                 Serial.printf("Recorded Time: %d\n", recordTime);

@@ -93,6 +93,7 @@ void setupMotorInterrupt();				// setup hall sensor reading for DC motors (left 
 void stopDCMotor();						    // set target speeds of left and right motor to be 0
 void setTargetSpeed(float MTOneSpeed, float MTTwoSspeed);   // set target speed for left and right motors
 void motorsOff();                 // turn off h-bridge control for both motor, real stop
+void speedAutoAdjust();           // auto adjust speed for left and right motor
 
 // Quick PID helper functions
 void QuickPID_Init();

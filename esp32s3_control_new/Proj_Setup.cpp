@@ -467,3 +467,41 @@ void PID_compute(){
 }
 
 #endif
+
+
+#define MAX_SPEED_MISS_COUNT    10000
+
+int leftSpeedMiss = 0;
+int rightSpeedMiss = 0;
+
+void speedAutoAdjust(){
+    if(targetSpeed_one == 0 && targetSpeed_two == 0){
+        return;
+    }
+
+    // left motor speed miss count
+    if(abs(targetSpeed_one - actualSpeed_one) > 1.5){
+        leftSpeedMiss++;
+    }
+    else{
+        leftSpeedMiss = 0;
+    }
+
+    // right motor speed miss count
+    if(abs(targetSpeed_two - actualSpeed_two) > 1.5){
+        rightSpeedMiss++;
+    }
+    else{
+        rightSpeedMiss = 0;
+    }
+
+    if(leftSpeedMiss > MAX_SPEED_MISS_COUNT){
+        targetSpeed_one = actualSpeed_one
+        leftSpeedMiss = 0;
+    }
+    
+    if(rightSpeedMiss > MAX_SPEED_MISS_COUNT){
+        targetSpeed_two = actualSpeed_two;
+        rightSpeedMiss = 0;
+    }
+}
