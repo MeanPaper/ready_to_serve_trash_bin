@@ -62,6 +62,7 @@ void setup(void) {
 	// setupMotorInterrupt();
     // setupLinearActuator();
     // QuickPID_Init();
+	
 	// // for debug
 	// setTargetTicksPerFrame(0,0);
 
@@ -69,9 +70,12 @@ void setup(void) {
 
 // main loop, cmd executing
 void loop(void) {
-	// // plotData();
-	// // parseCmd();
-	// // checkLid();
+
+	/* testing, debugging begin */
+	// plotData();
+	// parseCmd();
+	// checkLid();
+	/* testing, debugging end */
 
 	switch(current_state){
 		case LID: 
@@ -97,6 +101,8 @@ void loop(void) {
 		case FORWARD:
 		case LEFT:
 		case RIGHT:
+		case YOLO:
+			// QuickPID_Compute();
 			if(millis() - recordTime > currentDuration){
                 Serial.printf("Current Time: %d\n", millis());
                 Serial.printf("Recorded Time: %d\n", recordTime);
@@ -111,7 +117,6 @@ void loop(void) {
 }
 
 /** web service handlers section **/
-
 void handleRoot(AsyncWebServerRequest * request){ // use this for debugging I guess
 	Serial.println("Request root");
 	request->send(200, "html", "<h1>Welcome to ESP32-S3</h1>");
@@ -141,8 +146,6 @@ void handleStopMotors(AsyncWebServerRequest * request){ // need to think about t
 
 	recordTime = millis();
 	request->send(200, "application/json", response);
-	/* the problem with this event, need to store the state info of the lid */
-	/* should it continue execute with the given info ? */
 }
 
 // this function is not finished yet
@@ -320,7 +323,8 @@ std::string stateToString(binState state) {
         {binState::BACKWARD, "BACKWARD"},
         {binState::FORWARD, "FORWARD"},
         {binState::LEFT, "LEFT"},
-        {binState::RIGHT, "RIGHT"}
+        {binState::RIGHT, "RIGHT"},
+		{binState::YOLO, "YOLO"}
     };
 
     auto it = stateMap.find(state);
@@ -330,3 +334,5 @@ std::string stateToString(binState state) {
         return "UNKNOWN";
     }
 }
+
+// no emergency stop for this

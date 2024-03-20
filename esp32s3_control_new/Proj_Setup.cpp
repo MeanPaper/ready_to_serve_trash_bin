@@ -187,9 +187,14 @@ void QuickPID_Init(){
     MT2_PID.SetOutputLimits((float)(MAX_PWM) * (-1), (float)(MAX_PWM));
 }
 
-// this mind need to fixed later, it is ok for now
+
+/** QuickPID_Compute()
+ * compute the error between the target and actual speed of both DC motors
+ * then compute the PID control output based on the error
+*/
 void QuickPID_Compute(){
 
+    // this mind need to fixed later, it is ok for now, but not sure
     // ------ critical section begin -------
     noInterrupts();
 
