@@ -6,8 +6,8 @@
 #include "Proj_Setup.h"
 
 // need to register to UIUC network
-const char * ssid = "The Retreat";
-// const char * ssid = "IllinoisNet_Guest";
+// const char * ssid = "The Retreat";
+const char * ssid = "IllinoisNet_Guest";
 const char * pass = NULL;
 
 AsyncWebServer server(80); // use port 80, http
@@ -28,8 +28,8 @@ std::string stateToString(binState state);
 void setup(void) {
 	Serial.begin(9600);
     // Serial.println(WiFi.macAddress()); // MAC addr: 34:85:18:50:4B:54
-    long temp = millis();
-    while(millis() - temp < 2000);
+    // long temp = millis();
+    // while(millis() - temp < 2000);
 
 	// wifi connection
 	WiFi.begin(ssid, pass);
@@ -58,12 +58,12 @@ void setup(void) {
 	current_state = STOP;
 
     // // motors setups
-	// stopDCMotor();
-	// setupMotorInterrupt();
-    // setupLinearActuator();
-    // QuickPID_Init();
+	stopDCMotor();
+	setupMotorInterrupt();
+    // // setupLinearActuator();
+    QuickPID_Init();
 	
-	// // for debug
+	// // // for debug
 	// setTargetTicksPerFrame(0,0);
 
 }
@@ -73,7 +73,6 @@ void loop(void) {
 
 	/* testing, debugging begin */
 	// plotData();
-	// parseCmd();
 	// checkLid();
 	/* testing, debugging end */
 
@@ -92,9 +91,14 @@ void loop(void) {
 			break;
 		case STOP:
 			stopDCMotor(); // stop all DC motors
-			if(millis() - recordTime > 2000){ // turn off h-bridges for dc motors when stop for 2000ms
+
+			if(millis() - recordTime > 5000){ // turn off h-bridges for dc motors when stop for 2000ms
 				motorsOff();
 			}
+            else{
+                QuickPID_Compute();
+            }
+
 			break;
 
 		case BACKWARD:
@@ -102,7 +106,7 @@ void loop(void) {
 		case LEFT:
 		case RIGHT:
 		case YOLO:
-			// QuickPID_Compute();
+			QuickPID_Compute();
 			// speedAutoAdjust();
 			if(millis() - recordTime > currentDuration){
                 Serial.printf("Current Time: %d\n", millis());
@@ -111,10 +115,12 @@ void loop(void) {
 				Serial.println(" Done");
 				current_state = STOP;
 				stopDCMotor();
+                recordTime = millis();
 			}
 			break;
 		default: break;
 	}
+    // Serial.println("Hello World");
 }
 
 /** web service handlers section **/
@@ -184,7 +190,7 @@ void handleSetSpeed(AsyncWebServerRequest * request){
 		speedRight = request->getParam("speedRight",true)->value().toFloat();
 	}
 
-    Serial.printf("Left: %f, Right: %f\n", speedLeft, speedRight);
+    Serial.printf("Left: %f, Right: %f, duration: %ld\n", speedLeft, speedRight, duration);
 
 	setTargetSpeed(speedLeft, speedRight);
 	
@@ -260,6 +266,11 @@ void turnLeftRight(AsyncWebServerRequest * request){ // turn the bin left or rig
 	}
 
 	doc["state"] = stateToString(current_state);
+    
+    // g
+    Serial.printf("duration: %ld, speed: %f, direction: ", duration, speed);
+    Serial.print(stateToString(current_state).c_str());
+    Serial.println();
 
 	// return different states
 	serializeJson(doc, response);
@@ -310,6 +321,10 @@ void moveForwardBackward(AsyncWebServerRequest * request){ // move the bin forwa
 	}
 
 	doc["state"] = stateToString(current_state);
+
+    Serial.printf("duration: %ld, speed: %f, direction: ", duration, speed);
+    Serial.print(stateToString(current_state).c_str());
+    Serial.println();
 
 	// return different states
 	serializeJson(doc, response);

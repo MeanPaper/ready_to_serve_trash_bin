@@ -1,5 +1,7 @@
 #include "Proj_Setup.h"
 
+#define NOT_CONSIDER 1
+
 #if TESTING==1
 
 int ppr = 3;
@@ -10,7 +12,7 @@ double max_speed = 70;          // max rpm
 
 int ppr = 11;                   // pulse per revolution (hall encoders)
 double reduction_ratio = 56;    // gear reduction ratio, the denominator
-double max_speed = 150;
+double max_speed = 100;
 
 #endif
 
@@ -216,6 +218,15 @@ void QuickPID_Compute(){
 
     Motor_one.motorCtrl((int)(round(output_one)));
     Motor_two.motorCtrl((int)(round(output_two)));
+
+    // Serial.printf("output_two:");
+    // Serial.print(output_two);
+    // Serial.print(",");
+    // Serial.print("Detected_two:");
+    // Serial.print(actualSpeed_two > NOT_CONSIDER || actualSpeed_two < -NOT_CONSIDER ? actualSpeed_two: prevSpeed_two);
+    // Serial.print(",");
+    // Serial.print("Target Two:");
+    // Serial.println(targetSpeed_two);
 }
 
 /** setLid()
@@ -278,7 +289,7 @@ lidStateEnum checkLid(){
 
 #if(DEBUG)
 // A pair of varibles to help parse serial commands (thanks Fergs)
-#define NOT_CONSIDER 1
+
 int arg = 0;
 int index_ = 0;
 
@@ -403,14 +414,14 @@ void plotData() {
         // Serial.print("Target_one:");
         // Serial.println(targetSpeed_one);
 
-        Serial.printf("output_two:");
-        Serial.print(output_two);
-        Serial.print(",");
-        Serial.print("Detected_two:");
-        Serial.print(actualSpeed_two > NOT_CONSIDER || actualSpeed_two < -NOT_CONSIDER ? actualSpeed_two: prevSpeed_two);
-        Serial.print(",");
-        Serial.print("Target_one:");
-        Serial.println(targetSpeed_two);
+        // Serial.printf("output_two:");
+        // Serial.print(output_two);
+        // Serial.print(",");
+        // Serial.print("Detected_two:");
+        // Serial.print(actualSpeed_two > NOT_CONSIDER || actualSpeed_two < -NOT_CONSIDER ? actualSpeed_two: prevSpeed_two);
+        // Serial.print(",");
+        // Serial.print("Target Two:");
+        // Serial.println(targetSpeed_two);
         /******** comment out the code once PID param tuning is done *********/
     }
 }
@@ -474,13 +485,17 @@ void PID_compute(){
 int leftSpeedMiss = 0;
 int rightSpeedMiss = 0;
 
+/** speedAutoAdjust() 
+ * if target speed cannot be reach, adjust the target speed of the DC motors to the actual speed 
+ * after a certain time interval
+*/
 void speedAutoAdjust(){
     if(targetSpeed_one == 0 && targetSpeed_two == 0){
         return;
     }
 
     // left motor speed miss count
-    if(abs(targetSpeed_one - actualSpeed_one) > 1.5){
+    if(abs(targetSpeed_one - actualSpeed_one) > 1.5){ // +/- 1.5 within the target is acceptable
         leftSpeedMiss++;
     }
     else{
@@ -488,7 +503,7 @@ void speedAutoAdjust(){
     }
 
     // right motor speed miss count
-    if(abs(targetSpeed_two - actualSpeed_two) > 1.5){
+    if(abs(targetSpeed_two - actualSpeed_two) > 1.5){ // +/- 1.5 within the target is acceptable
         rightSpeedMiss++;
     }
     else{
@@ -496,7 +511,7 @@ void speedAutoAdjust(){
     }
 
     if(leftSpeedMiss > MAX_SPEED_MISS_COUNT){
-        targetSpeed_one = actualSpeed_one
+        targetSpeed_one = actualSpeed_one;
         leftSpeedMiss = 0;
     }
     
@@ -505,3 +520,13 @@ void speedAutoAdjust(){
         rightSpeedMiss = 0;
     }
 }
+
+
+// the idea of this...
+// the motor might not be able to meet the target speed if there are more loads
+// so we need to adjust the target speed to the actual speed after a certain time interval
+// so that the PID control would not become out of control
+
+// a good way would be never drive the motor to the max speed
+// if the motor is driver at the max speed then mostly something is wrong with the PID
+// then we need to reset the PID to correct the system
