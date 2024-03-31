@@ -1,18 +1,25 @@
+#include "HardwareSerial.h"
+#include "esp32-hal.h"
 #include "Proj_Setup.h"
 
 #define NOT_CONSIDER 1
 
 #if TESTING==1
 
+// testing motor
 int ppr = 3;
 double reduction_ratio = 235;
-double max_speed = 70;          // max rpm
+double max_speed = 70;         
 
 #else
 
-int ppr = 11;                   // pulse per revolution (hall encoders)
-double reduction_ratio = 56;    // gear reduction ratio, the denominator
-double max_speed = 100;
+// modified the following to match the specs from the motors
+int ppr = 11;                       // pulse per revolution (hall encoders)
+// double reduction_ratio = 56;     // gear reduction ratio, the denominator
+// double max_speed = 150;
+double reduction_ratio = 169;
+double max_speed = 50;          
+
 
 #endif
 
@@ -23,6 +30,7 @@ int pid_interval = 100;
 double shaft_ppr = ppr * reduction_ratio; 
 double speed_constant = 60 * (1000 / pid_interval) / shaft_ppr;
 unsigned long currentTime = 0; 
+unsigned long pid_compute_time = 0;
 
 // --- --- --- close loop --- --- ---
 // PID controller parameters
@@ -33,13 +41,27 @@ unsigned long currentTime = 0;
 #else
 
 /* Actual PID global */
-float Kp_one = 0.9;             // proportional
-float Ki_one = 1.25;            // integral
-float Kd_one = 0.0008;          // differential
 
-float Kp_two = 0.9;
-float Ki_two = 1.25;
-float Kd_two = 0.0008;
+// left motor (finalized)
+float Kp_one = 0.8;                 // proportional
+float Ki_one = 4;                   // integral
+float Kd_one = 0.041;               // differential
+
+// working but not that good
+// float Kp_one = 1.15;             // proportional
+// float Ki_one = 2.235;            // integral
+// float Kd_one = 0.00025;          // differential
+
+// right motor (finalized)
+float Kp_one = 0.8;                 // proportional
+float Ki_one = 4;                   // integral
+float Kd_one = 0.041;               // differential
+
+// the working one
+// float Kp_two = 0.9;
+// float Ki_two = 1.25;
+// float Kd_two = 0.0008;
+
 #endif
 
 /* target, actual, and previous speed of both DC motors */
@@ -178,11 +200,13 @@ void setTargetSpeed(float MTOneSpeed, float MTTwoSspeed){
  * set the PID control parameters, output limits, sampling rates
 */
 void QuickPID_Init(){
+    MT1_PID.Reset();
     MT1_PID.SetTunings(Kp_one, Ki_one, Kd_one);
     MT1_PID.SetSampleTimeUs(pid_interval * 1000);
     MT1_PID.SetMode(MT1_PID.Control::automatic);
     MT1_PID.SetOutputLimits((float)(MAX_PWM) * (-1), (float)(MAX_PWM));
 
+    MT2_PID.Reset();
     MT2_PID.SetTunings(Kp_two, Ki_two, Kd_two);
     MT2_PID.SetSampleTimeUs(pid_interval * 1000);
     MT2_PID.SetMode(MT2_PID.Control::automatic);
@@ -197,28 +221,32 @@ void QuickPID_Init(){
 void QuickPID_Compute(){
 
     // this mind need to fixed later, it is ok for now, but not sure
-    // ------ critical section begin -------
     noInterrupts();
+    if(millis() - pid_compute_time >= pid_interval){
+        // compute motor two speed, unit = revolutions per min
+        prevSpeed_two = (actualSpeed_two > 1 || actualSpeed_two < -1) ? actualSpeed_two : prevSpeed_two;
+        actualSpeed_two = (float)(Motor_two.motor_pulse_count) * speed_constant ;
+        // Motor_two.motor_pulse_count = 0; 
 
-    // compute motor two speed, unit = revolutions per min
-    prevSpeed_two = (actualSpeed_two > 1 || actualSpeed_two < -1) ? actualSpeed_two : prevSpeed_two;
-    actualSpeed_two = (float)(Motor_two.motor_pulse_count) * speed_constant ;
-    Motor_two.motor_pulse_count = 0; 
+        // compute motor one speed, unit = revolutions per min
+        prevSpeed_one = (actualSpeed_one > 1 || actualSpeed_one < -1) ? actualSpeed_one : prevSpeed_one;
+        actualSpeed_one = (float)(Motor_one.motor_pulse_count) * speed_constant;
+        
+        // Motor_one.motor_pulse_count = 0;
+        MT1_PID.Compute();
+        MT2_PID.Compute();
 
-    // compute motor one speed, unit = revolutions per min
-    prevSpeed_one = (actualSpeed_one > 1 || actualSpeed_one < -1) ? actualSpeed_one : prevSpeed_one;
-    actualSpeed_one = (float)(Motor_one.motor_pulse_count) * speed_constant;
-    Motor_one.motor_pulse_count = 0;
+        Motor_one.motorCtrl((int)(round(output_one)));
+        Motor_two.motorCtrl((int)(round(output_two)));
+        // noInterrupts();
 
+        Motor_two.motor_pulse_count = 0; 
+        Motor_one.motor_pulse_count = 0;
+        pid_compute_time = millis();
+    }
     interrupts();
-    // ------ critical section end -------
-    
-    MT1_PID.Compute();
-    MT2_PID.Compute();
 
-    Motor_one.motorCtrl((int)(round(output_one)));
-    Motor_two.motorCtrl((int)(round(output_two)));
-
+    /* for debugging */
     // Serial.printf("output_two:");
     // Serial.print(output_two);
     // Serial.print(",");
@@ -397,7 +425,7 @@ void setTargetTicksPerFrame(int left, int right)
 void plotData() {
     parseCmd();
     
-    if(!moving && millis() - stop_time > 1000){
+    if(!moving && millis() - stop_time > 2000){
         motorsOff();
     }
     else{
@@ -405,14 +433,14 @@ void plotData() {
 
         /*********   comment out if not in debug set up ***********/
         /*********   the ":" and "," should not be comment out if in plotting ***********/
-        // Serial.printf("output_one:");
-        // Serial.print(output_one);
-        // Serial.print(",");
-        // Serial.print("Detected_one:");
-        // Serial.print(actualSpeed_one > NOT_CONSIDER || actualSpeed_one < -NOT_CONSIDER ? actualSpeed_one: prevSpeed_one);
-        // Serial.print(",");
-        // Serial.print("Target_one:");
-        // Serial.println(targetSpeed_one);
+        Serial.printf("output_one:");
+        Serial.print(output_one);
+        Serial.print(",");
+        Serial.print("Detected_one:");
+        Serial.print(actualSpeed_one > NOT_CONSIDER || actualSpeed_one < -NOT_CONSIDER ? actualSpeed_one: prevSpeed_one);
+        Serial.print(",");
+        Serial.print("Target_one:");
+        Serial.println(targetSpeed_one);
 
         // Serial.printf("output_two:");
         // Serial.print(output_two);
