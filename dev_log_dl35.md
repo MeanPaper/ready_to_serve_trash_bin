@@ -239,9 +239,9 @@ L298N Datasheet: https://www.st.com/resource/en/datasheet/l298.pdf
 
 The L298N is a dual full-bridge driver. Inside L298N, there are two full H-bridge drivers. Previously, I have investigated [how H-bridge works](#mcu-code-begin), I can just connect the IC based on that. Since I was not too familiar with power circuit, I handed this part to my EE teammate. 
 
-<img src="./image/L298N-block-diagram.png" alt="L298N block diagram" style="width: 500px">
+<img src="./image/L298N-block-diagram.png" alt="L298N block diagram" style="width: 500px;"/>
 
-<img src="./image/L298N-IC.png" alt="L298N IC" style="width: 360px;">
+<img src="./image/L298N-IC.png" alt="L298N IC" style="width: 360px;"/>
 
 ENABLE A, IN 1, IN 2, OUTPUT 1, and OUTPUT 2 control the first motor. <br>
 ENABLE B, IN 3, IN 4, OUTPUT 3, and OUTPUT 4 control the second motor.
@@ -375,45 +375,45 @@ The order of tuning parameters: P -> D -> I<br>
 Below ared some results with different P, D, I
 
 $P = 1.1$ <br>
-<img src="./image/p_1dot1.png" alt="PID graph for p = 1.1" style="height:280px"/>
+<img src="./image/p_1dot1.png" alt="PID graph for p = 1.1" style="height:280px;" />
 
 $P = 1.25$ <br>
-<img src="./image/p_1dot25.png" alt="PID graph for p = 1.25" style="height:280px"/>
+<img src="./image/p_1dot25.png" alt="PID graph for p = 1.25" style="height:280px;" />
 
 Increase P to reach some sort of damping
 $P = 2.3, D=0.0001$ <br> 
-<img src="./image/p_2dot3_d_dot0001.png" alt="PID graph for p = 2.3, d=0.0001" style="height:280px"/>
+<img src="./image/p_2dot3_d_dot0001.png" alt="PID graph for p = 2.3, d=0.0001" style="height:280px;" />
 
 Tuning based on $P = 2.3, D=0.0001$ <br> 
 $P = 2.3, D = 0.05$<br>
-<img src="./image/p_2dot3_d_dot05.png" alt="PID graph for p = 2.3, d=0.05" style="height:280px"/>
+<img src="./image/p_2dot3_d_dot05.png" alt="PID graph for p = 2.3, d=0.05" style="height:280px;" />
 
 $P = 2.3, D = 0.075$<br>
-<img src="./image/p_2dot3_d_dot075.png" alt="PID graph for p = 2.3, d=0.075" style="height:280px"/>
+<img src="./image/p_2dot3_d_dot075.png" alt="PID graph for p = 2.3, d=0.075" style="height:280px;" />
 
 $P = 2.3, D = 0.125$<br>
-<img src="./image/p_2dot3_d_dot125.png" alt="PID graph for p = 2.3, d=0.125" style="height:280px"/>
+<img src="./image/p_2dot3_d_dot125.png" alt="PID graph for p = 2.3, d=0.125" style="height:280px;" />
 
 $P = 2.3, D = 0.1$<br>
-<img src="./image/p_2dot3_d_dot1.png" alt="PID graph for p = 2.3, d=0.1" style="height:280px"/>
+<img src="./image/p_2dot3_d_dot1.png" alt="PID graph for p = 2.3, d=0.1" style="height:280px;" />
 
 The P might be aggressive, reducing P to 1.15 <br>
 $P = 1.15, D = 0.1$ <br>
-<img src="./image/p_1dot15_d_dot1.png" alt="PID graph for p = 1.5, d=0.1" style="height:280px"/>
+<img src="./image/p_1dot15_d_dot1.png" alt="PID graph for p = 1.5, d=0.1" style="height:280px;" />
 
 Using $P = 1.15, D = 0.1$ as a reference and comparing the differences
 
 $P = 1.15, D = 0.15$ <br>
-<img src="./image/p_1dot15_d_dot15.png" alt="PID graph for p = 1.5, d=0.15" style="height:280px"/>
+<img src="./image/p_1dot15_d_dot15.png" alt="PID graph for p = 1.5, d=0.15" style="height:280px;" />
 
 $P = 1.15, D = 0.11$ <br>
-<img src="./image/p_1dot15_d_dot11.png" alt="PID graph for p = 1.5, d=0.11" style="height:280px"/>
+<img src="./image/p_1dot15_d_dot11.png" alt="PID graph for p = 1.5, d=0.11" style="height:280px;" />
 
 $P = 1.15, D = 0.105$ <br>
-<img src="./image/p_1dot15_d_dot105.png" alt="PID graph for p = 1.5, d=0.105" style="height:280px"/>
+<img src="./image/p_1dot15_d_dot105.png" alt="PID graph for p = 1.5, d=0.105" style="height:280px;" />
 
 $P = 1.15, D = 0.08$ <br>
-<img src="./image/p_1dot15_d_dot08.png" alt="PID graph for p = 1.5, d=0.08" style="height:280px"/>
+<img src="./image/p_1dot15_d_dot08.png" alt="PID graph for p = 1.5, d=0.08" style="height:280px;" />
 
 With $P \geq 1$, the resulting curve will always have a sudden jump at the beginning. When $P \lt 1$, the sudden jump at the beginning becomes less. The sweet spot of P is around 0.8. The P can quickly respond to errors without creating a sudden jump at the beginning. With $P \approx 0.8$, the D should be around 0.04 to smooth out the sudden jump.
 
@@ -421,10 +421,10 @@ Then, for I, a good one is between 4 and 8. It can quickly lift the PID output t
 
 The finalized PID curve with $P=0.8, I=4, D=0.041$
 $P = 1.15, D = 0.08$ <br>
-<img src="./image/final_PID.png" alt="final pid graph" style="height:280px"/>
+<img src="./image/final_PID.png" alt="final pid graph" style="height:280px;"/>
 
 Although the left and right motors might not be the same, but these set of PID parameters can produce similar outputs <br>
-<img src="./image/pid_left_right.png" alt="left and right motor PID graph" style="height:280px"/>
+<img src="./image/pid_left_right.png" alt="left and right motor PID graph" style="height:280px;" />
 
 At this point, the PID tuning is completed. Although the PID is tuned based on the 178 RPM motor, it works well on our 60 RPM motor. The probable reason is that the two motors are the same model but with different gear ratios.
 
