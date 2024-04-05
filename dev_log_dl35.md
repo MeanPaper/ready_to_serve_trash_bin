@@ -375,7 +375,7 @@ The order of tuning parameters: P -> D -> I<br>
 Below ared some results with different P, D, I
 
 $P = 1.1$ <br>
-<img src="./image/p_1dot1.png" alt="PID graph for p = 1.1" height="280" />
+<img src="./image/p_1dot1.png" alt="L298N IC" style="width: 360px;"/>
 
 $P = 1.25$ <br>
 <img src="./image/p_1dot25.png" alt="PID graph for p = 1.25" height="280" />
