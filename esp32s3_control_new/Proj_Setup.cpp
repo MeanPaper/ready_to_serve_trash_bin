@@ -1,5 +1,3 @@
-#include "HardwareSerial.h"
-#include "esp32-hal.h"
 #include "Proj_Setup.h"
 
 #define NOT_CONSIDER 1
@@ -15,10 +13,10 @@ double max_speed = 70;
 
 // modified the following to match the specs from the motors
 int ppr = 11;                       // pulse per revolution (hall encoders)
-// double reduction_ratio = 56;     // gear reduction ratio, the denominator
-// double max_speed = 150;
-double reduction_ratio = 169;
-double max_speed = 50;          
+double reduction_ratio = 56;     // gear reduction ratio, the denominator
+double max_speed = 150;
+// double reduction_ratio = 169;
+// double max_speed = 50;          
 
 
 #endif
@@ -53,9 +51,9 @@ float Kd_one = 0.041;               // differential
 // float Kd_one = 0.00025;          // differential
 
 // right motor (finalized)
-float Kp_one = 0.8;                 // proportional
-float Ki_one = 4;                   // integral
-float Kd_one = 0.041;               // differential
+float Kp_two = 0.8;                 // proportional
+float Ki_two = 4;                   // integral
+float Kd_two = 0.041;               // differential
 
 // the working one
 // float Kp_two = 0.9;
@@ -433,23 +431,23 @@ void plotData() {
 
         /*********   comment out if not in debug set up ***********/
         /*********   the ":" and "," should not be comment out if in plotting ***********/
-        Serial.printf("output_one:");
-        Serial.print(output_one);
-        Serial.print(",");
-        Serial.print("Detected_one:");
-        Serial.print(actualSpeed_one > NOT_CONSIDER || actualSpeed_one < -NOT_CONSIDER ? actualSpeed_one: prevSpeed_one);
-        Serial.print(",");
-        Serial.print("Target_one:");
-        Serial.println(targetSpeed_one);
+        // Serial.printf("output_one:");
+        // Serial.print(output_one);
+        // Serial.print(",");
+        // Serial.print("Detected_one:");
+        // Serial.print(actualSpeed_one > NOT_CONSIDER || actualSpeed_one < -NOT_CONSIDER ? actualSpeed_one: prevSpeed_one);
+        // Serial.print(",");
+        // Serial.print("Target_one:");
+        // Serial.println(targetSpeed_one);
 
-        // Serial.printf("output_two:");
-        // Serial.print(output_two);
-        // Serial.print(",");
-        // Serial.print("Detected_two:");
-        // Serial.print(actualSpeed_two > NOT_CONSIDER || actualSpeed_two < -NOT_CONSIDER ? actualSpeed_two: prevSpeed_two);
-        // Serial.print(",");
-        // Serial.print("Target Two:");
-        // Serial.println(targetSpeed_two);
+        Serial.printf("output_two:");
+        Serial.print(output_two);
+        Serial.print(",");
+        Serial.print("Detected_two:");
+        Serial.print(actualSpeed_two > NOT_CONSIDER || actualSpeed_two < -NOT_CONSIDER ? actualSpeed_two: prevSpeed_two);
+        Serial.print(",");
+        Serial.print("Target Two:");
+        Serial.println(targetSpeed_two);
         /******** comment out the code once PID param tuning is done *********/
     }
 }

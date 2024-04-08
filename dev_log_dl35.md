@@ -446,3 +446,16 @@ At this point, the PID tuning is completed. Although the PID is tuned based on t
 
 ## April 01, 2024
 
+## April 05, 2024
+### PCB Testing: PCB v1
+
+Tested the first version of the customized PCB.
+
+Checklist of working components
+- [x] ESP32S3 chip 
+- [x] UART code uploading
+- [x] reset and boot button (boot button is fried due to soldering, need to replace)  
+- [x] power subsystem
+- [x] motor one port of the motor driver
+- [ ] motor two port of the motor driver
+- [ ] linear actuator motor driver  

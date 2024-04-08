@@ -73,6 +73,7 @@ void loop(void) {
 
 	/* testing, debugging begin */
 	plotData();
+    // Serial.println("Hello");
 	// checkLid();
 	/* testing, debugging end */
 
