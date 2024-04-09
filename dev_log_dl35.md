@@ -454,8 +454,43 @@ Tested the first version of the customized PCB.
 Checklist of working components
 - [x] ESP32S3 chip 
 - [x] UART code uploading
-- [x] reset and boot button (boot button is fried due to soldering, need to replace)  
+- [x] reset and boot button (boot button is fried due to soldering, needs to be replaced)  
 - [x] power subsystem
 - [x] motor one port of the motor driver
 - [ ] motor two port of the motor driver
-- [ ] linear actuator motor driver  
+- [x] linear actuator motor driver  
+- [ ] Micro-USB communicates with ESP32S3 module 
+
+Motor driver port 2 does not output power to the motor even though the MCU is sending PWM and H-bridge control signals.
+
+
+## April 08, 2024
+### PCB Testing: PCB v1 motor driver port two
+
+Continued testing the first version of the customized PCB with Josh, my EE teammate 
+
+We successfully debugged the issue with motor two port of the motor driver. We found out that the B-sense pin of L298 was not grounded. Because of this, the motor driver outputed 12V to both the positive and negative ports of the motor. The version 1 of the PCB did not have any connection from B-sense to ground, so we solder a jumper from B-sense to the ground of the L298 chip. 
+
+We also tried to debug the micro-usb communication, but we couldn't find enough information to help us debugging this. The pin connections are correct. The Arduino IDE settings are adjusted accordingly. However, neither of our laptops recognizes the USB connection with ESP32S3. 
+
+Checklist of working components
+- [x] ESP32S3 chip 
+- [x] UART code uploading
+- [x] reset and boot button (boot button is fried due to soldering, needs to be replaced)  
+- [x] power subsystem
+- [x] motor one port of the motor driver
+- [x] motor two port of the motor driver
+- [x] linear actuator motor driver  
+- [ ] Micro-USB communicates with ESP32S3 module (do not know what is going, very unfortunate)
+
+### Project Design Update
+
+We asked the machine shop to drill a couple of holes in the battery box. We now can pass the power wires from the side and motor wires from the bottom of the base to our PCB, which will sit on top of the battery box. 
+
+The Plan for project design:
+- Get a 3D printed box for the PCB (for hiding wires)
+
+The Plan for project testing:
+- Assemble everything
+- Run the web service control and motor driver control at the same time
+- Make necessary adjustments
