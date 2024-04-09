@@ -1,7 +1,38 @@
 # Dongming's Development Log
 
+## Table of Contents
+- [Dongming's Development Log](#dongmings-development-log)
+  - [Table of Contents](#table-of-contents)
+  - [Feburary 12, 2024](#feburary-12-2024)
+    - [Project Design: Project Components](#project-design-project-components)
+  - [Feburary 16, 2024](#feburary-16-2024)
+    - [Project Design: Component Update](#project-design-component-update)
+  - [February 20, 2024](#february-20-2024)
+    - [Project Design: Motor Choice](#project-design-motor-choice)
+  - [Feburary 27, 2024](#feburary-27-2024)
+    - [MCU Code: Begin](#mcu-code-begin)
+  - [March 02, 2024](#march-02-2024)
+    - [MCU Code: MCU Pin Info and Driver Usage](#mcu-code-mcu-pin-info-and-driver-usage)
+  - [March 04, 2024](#march-04-2024)
+    - [MCU Code: Code Struture and MCU Pin Assignments](#mcu-code-code-struture-and-mcu-pin-assignments)
+  - [March 09, 2024](#march-09-2024)
+    - [MCU Code: Wireless Communication Code](#mcu-code-wireless-communication-code)
+  - [March 13, 2024](#march-13-2024)
+  - [March 16, 2024](#march-16-2024)
+  - [March 26, 2024](#march-26-2024)
+    - [Debug Customized PCB: Unable to Upload code to MCU with USB-to-UART](#debug-customized-pcb-unable-to-upload-code-to-mcu-with-usb-to-uart)
+  - [March 29 to March 31, 2024](#march-29-to-march-31-2024)
+    - [MCU Code: Motor Control - PID tunning](#mcu-code-motor-control---pid-tunning)
+  - [April 05, 2024](#april-05-2024)
+    - [PCB Testing: PCB v1](#pcb-testing-pcb-v1)
+  - [April 08, 2024](#april-08-2024)
+    - [PCB Testing: PCB v1 motor driver port two](#pcb-testing-pcb-v1-motor-driver-port-two)
+    - [Project Design: Minor Update on Physical Design](#project-design-minor-update-on-physical-design)
+  - [April 09, 2024](#april-09-2024)
+  - [April 10, 2024](#april-10-2024)
+
 ## Feburary 12, 2024
-### Project Design: Project Component
+### Project Design: Project Components
 
 Ready-to-serve trash bin has two big systems
 - Motion and Object Detection System
@@ -661,7 +692,7 @@ Checklist of working components
 - [x] linear actuator motor driver  
 - [ ] Micro-USB communicates with ESP32S3 module (do not know what is going, very unfortunate)
 
-### Project Design Update
+### Project Design: Minor Update on Physical Design
 
 We asked the machine shop to drill a couple of holes in the battery box. We now can pass the power wires from the side and motor wires from the bottom of the base to our PCB, which will sit on top of the battery box. 
 
