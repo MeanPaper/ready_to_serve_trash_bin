@@ -198,7 +198,7 @@ This computation will approximate the current speed of the motors (in RPM) based
 - Set up wireless communication between the ESP32S3 chip and other edge devices
 - Figure out how to control motor using L298N
 
-## March 2, 2024
+## March 02, 2024
 ### MCU Code: MCU Pin Info and Driver Usage
 
 **Quick Check of ESP32S3-WROOM-1**
@@ -252,7 +252,7 @@ The IN's control the direction of the motors. ENABLE's determine if the motor sh
 - Assign MCU pins for programming
 - Draft the wireless communication for the MCU
 
-## March 4, 2024
+## March 04, 2024
 ### MCU Code: Code Struture and MCU Pin Assignments 
 
 Files and brief:
@@ -332,7 +332,7 @@ In ESP32, the LED control (LEDC) peripheral is primarily designed to control the
 **TODO:**
 - Draft the wireless communication for the MCU
 
-## March 9, 2024
+## March 09, 2024
 ### MCU Code: Wireless Communication Code
 
 The wireless communication can be break into 3 steps:
@@ -340,7 +340,187 @@ The wireless communication can be break into 3 steps:
 2. MCU creates a web server with different APIs 
 3. MCU listens for requests coming from the client device (in the project, the client device is the Raspberry Pi)
 
-## March 18, 2024
+**WiFi Connection**
+
+Arduino IDE's built-in library `WiFi` can help ESP32S3 establish a WiFi connection with a router or make ESP32S3 a WiFi access point. The `WiFi` class has two modes `softAP` and `STA`.
+- `softAP`: makes ESP32S3 a WiFi access point
+- `STA`: ESP32S3 will connect to the WiFi router
+
+`STA` is more suitable for the project. Since ESP32S3 is connected to a WiFi router, and the WiFi router's signal is strong, ESP32S3 can communicate with the WiFi router pretty much everywhere. 
+
+The communication mechanism:
+```txt
+ESP32S3 <----- Data -----> Router <------ Data ------> Devices
+```
+
+The ESP32S3 module will start a web server and expose its IP address in the WiFi network. The devices under the same WiFi network can communicate with the ESP32S3 via ESP32S3's IP address. Here is how WiFi connection between ESP32S3 and router establishes:
+
+```cpp
+#include <WiFi.h>
+
+const char * ssid = "IllinoisNet_Guest"; // wifi name of the wifi esp32s3 needs to connect
+const char * pass = NULL;                // wifi password, if wifi does not have password, leave it null
+
+void setup(){ 
+  Serial.begin(9600);                    // setup serial with a baud rate, for serial printing
+	WiFi.begin(ssid, pass);                 
+	Serial.printf("Connecting to %s", ssid);
+	while(!WiFi.isConnected()){            // attempt to connect
+	  Serial.print(".");
+	  delay(1000);
+	}
+	Serial.println();
+
+  // output IP address of ESP32S3 in the current wifi network
+	Serial.println("WiFi IP: ");
+	Serial.println(WiFi.localIP());
+
+  // some code for initialization (pin setup, motors, sensors, etc)
+}
+
+void loop(){
+  // some code for ESP32S3 main loop
+}
+```
+
+ESP32S3 cannot directly access UIUC's school network (`IllinoisNet_Guest` or `IllinoisNet`). To allow ESP32S3 to access UIUC's school network, ESP32S3 must be added to the device list under a student's account. To register ESP32S3 and add it to the device list, go to https://go.illinois.edu/illinoisnetguest and log in, click on "Register a New Device". The device registration requires the MAC address of the device. To get ESP32S3's MAC address, we can add a line in the `setup` function:
+```cpp
+Serial.println(WiFi.macAddress());
+```
+
+**Web Services**
+
+The main communication protocol between ESP32S3 and the connected devices in the project is HTTP. It might not be the optimal solution, but it works. To optimize the performance of handling HTTP requests on ESP32S3, I created an async web server on the ESP32S3 using `ESPAsyncWebServer`. The advantage of this approach is that the async web server is managed by an event loop. The main program would not be blocked by the request handling of the async web server. In this case, the web server and main program (motor controls) can run concurrently on a single core of ESP32S3. ESP32S3 has two cores. Technically, I can create two threads (one for the main program and one for web services). The MCU code will be more complex and challenging because there is quite a lot of data shared between two threads and synchronization is required. It is also possible that the true multithread program might have a worse performance due to synchronization overhead and other reasons.
+
+To create an async web server on ESP32S3, we need to include the library `ESPAsyncWebServer.h` in our program and then create an `AsyncWebServer` object:
+```cpp
+AsyncWebServer server(80); // start a web server at port 80, HTTP generally uses port 80
+```
+
+The device (Raspberry Pi) needs to control the movement and the lid of the bin. To make the control easier, I created a list of APIs:
+
+- `stop_motors`<br>
+  Description: Stop the movement of the bin (not include the lid movement)
+
+  Parameters: None
+  
+  Response:
+  - a json object containing current state `{state: "STOP" | "LID" }`
+
+- `set_speed`<br>
+  Description: Set the speed of motors for a specific duration. Left and right motors can adjust to different speed
+
+  Parameters:
+  - `duration`(long int): motor control duration in ms [optional, default: 0]
+  - `speedLeft`(float): left motor speed [optional, default: 0]
+  - `speedRight`(float): right motor speed [optional, default: 0]
+
+  Response:
+  - a json object containing current state `{state: "YOLO" | "LID" }`
+
+- `set_lid`<br>
+  Description: Open the lid of the bin
+  
+  Parameters: None
+
+  response:
+  - a json object containing current state `{state: "LID"}`
+    
+- `move`<br>
+  Description: Move the bin forward or backward with a specific speed for a specific duration
+
+  Parameters:
+  - `duration`(long int): motor control duration in ms [optional, default: 5000]
+  - `speed`(float): moving speed [optional, default: 0]
+  - `direction`(string):  "forward"/"backward" [optional]
+
+  Response:
+  - a json object containing current state `{state: "FORWARD" | "BACKWARD" | "LID" }`
+  
+- `turn`<br>
+  Description: Turn the bin left or right with a specific speed for a specific duration
+
+  Parameters:
+  - `duration`(long int): motor control duration in ms [optional, default: 5000]
+  - `speed`(float): turning speed [optional, default: 0]
+  - `direction`(string): "left"/"right" [optional]
+
+  Response:
+  - a json object containing current state `{state: "LEFT" | "RIGHT" | "LID" }`
+
+*A design choice for state machine implementation later:* <br>
+When `set_lid` is called, the main control program enters the state `LID`. In the `LID` state, any incoming requests will be blocked, and all handlers will respond `{state: "LID"}`. In the `LID` state, the bin must stop. The main control program will leave the `LID` state once the `LID` is completely closed.
+
+Web services handlers on ESP32S3:
+```cpp
+// web service handlers
+void handleRoot(AsyncWebServerRequest *);          // for connection testing
+void handleStopMotors(AsyncWebServerRequest *);    // stop_motors
+void handleSetSpeed(AsyncWebServerRequest *);      // set_speed
+void handleLid(AsyncWebServerRequest *);           // set_lid
+void moveForwardBackward(AsyncWebServerRequest *); // move
+void turnLeftRight(AsyncWebServerRequest *);       // turn
+```
+
+Web services handler general definition in the project:
+```cpp
+void some_handler(AsyncWebServerRequest * request){
+  // some local variables
+
+  // request data parameter checking
+  // depends on the API, the handler can have no  hecking or more than one checking
+  if(request->hasParam("something", true)){
+    // update control data based on the request data
+  	something = request->getParam("something", true)->value().toInt();
+  }
+
+  // some updates on the control variables (global / local)
+
+  // setting up response 
+
+  request->send(200, "application/json", response);
+}
+```
+Almost all handlers create a `JsonDocument` object. `JsonDocument` is a class in a library called `ArduinoJson.h`. This class makes JSON object creation much easier. When handlers need to send back a response, they can convert the JsonDocument to a JSON object string using the `serializeJson` function. 
+
+Intialize all the APIs and start asyc web server:
+```cpp
+
+  // include this chunk of code in void setup(), after WiFi setup
+	// async server handling
+  server.on("/", HTTP_GET, handleRoot);
+  server.on("/stop_motors", HTTP_POST, handleStopMotors);
+  server.on("/set_speed", HTTP_POST, handleSetSpeed);
+  server.on("/set_lid", HTTP_POST, handleLid);
+  server.on("/move", HTTP_POST, moveForwardBackward);
+  server.on("/turn", HTTP_POST, turnLeftRight);
+
+  // turn on the web server 
+	server.begin();
+```
+
+After doing all the setup, all devices in the same wifi network can interact with the web server on ESP32S3. To interact with the server, the device can send data via `http://ESP32S3_IP_ADDRESS/:path`. An easy way to verify whether the web server is working or not is to go to `http://ESP32S3_IP_ADDRESS/` on the laptop's browsers. This triggers the root handler of the ESP32S3 web server. The relative path of the root is `/`. The browser will show the text, "Welcome to ESP32-S3". Here is the definition of the root handler of the ESP32S3 web server:
+```cpp
+void handleRoot(AsyncWebServerRequest * request){ // use this for debugging I guess
+  Serial.println("Request root");
+  request->send(200, "html", "<h1>Welcome to ESP32-S3</h1>");
+}
+```
+I am writing a Python script using `httpx` to interact with the ESP32S3 web server. The goal of the script is to test the functionalities and behaviors of the web server. 
+
+**Additional materials:**
+- An article on setting up connection between ESP32S3 and Router: [Link](https://www.upesy.com/blogs/tutorials/how-to-connect-wifi-acces-point-with-esp32)
+- Arduino WiFi Reference: [Link](https://www.arduino.cc/reference/en/libraries/wifi/)
+- ESPAsyncWebServer Reference: [Link](https://github.com/esphome/ESPAsyncWebServer)
+
+**TODO:**
+- Test all the web server APIs
+- Write the motor control code
+
+## March 13, 2024
+
+
+## March 16, 2024
 
 
 ## March 26, 2024 
@@ -358,7 +538,7 @@ The correct connection when programming with USB-to-UART:
 - Debug Mirco-USB programming for MCU. MCU still cannot communicate/program via Micro-USB
 
 ## March 29 to March 31, 2024
-### Motor Control: PID tunning
+### MCU Code: Motor Control - PID tunning
 
 The motor control need to react quickly to the change in the set point (target) and generate a smooth transition from one speed to another. 
 
@@ -444,8 +624,6 @@ At this point, the PID tuning is completed. Although the PID is tuned based on t
 **TODO:**
 - Step down setpoint when motors cannot meet the setpoint due to various reasons
 
-## April 01, 2024
-
 ## April 05, 2024
 ### PCB Testing: PCB v1
 
@@ -494,3 +672,10 @@ The Plan for project testing:
 - Assemble everything
 - Run the web service control and motor driver control at the same time
 - Make necessary adjustments
+
+## April 09, 2024
+
+## April 10, 2024
+
+
+Note: the commit history might not be the same as the timeline here... the dev log might be earlier or later than the commit history. But they are almost aligned.
