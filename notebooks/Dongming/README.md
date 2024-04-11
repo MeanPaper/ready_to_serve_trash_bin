@@ -589,25 +589,25 @@ Let's use `handleLid as example`
 void handleLid(AsyncWebServerRequest * request){
 	
 	#if (DEBUG)
-  Serial.println("Request lid operation"); // only for debug purposes
+  	Serial.println("Request lid operation"); // only for debug purposes
 	#endif
 
-  // local variables
-  JsonDocument doc;
+  	// local variables
+  	JsonDocument doc;
 	String response;
 	
 	// set up operation control signals
-  stopDCMotor();
-  setLid();
+  	stopDCMotor();
+  	setLid();
 
 	// set up response data to the client
-  current_state = LID;                         // change the main FSM to LID state
+  	current_state = LID;                         // change the main FSM to LID state
 	doc["state"] = stateToString(current_state); // a helper function: convert MACRO to string
 	serializeJson(doc, response);
 
-  // time recording, and send a response to the remote control device
+  	// time recording, and send a response to the remote control device
 	recordTime = millis();
-  request->send(200, "application/json", response);
+  	request->send(200, "application/json", response);
 }
 ```
 
