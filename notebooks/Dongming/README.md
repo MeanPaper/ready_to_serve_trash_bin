@@ -21,6 +21,10 @@
     - [MCU Code: Wireless Communication Testing Part 1](#mcu-code-wireless-communication-testing-part-1)
   - [March 16, 2024](#march-16-2024)
     - [MCU Code: FSMs](#mcu-code-fsms)
+  - [March 17, 2024](#march-17-2024)
+    - [MCU Code: Wireless Communication Testing Part 2](#mcu-code-wireless-communication-testing-part-2)
+  - [March 18, 2024](#march-18-2024)
+    - [MCU Code: Motor Control Script](#mcu-code-motor-control-script)
   - [March 26, 2024](#march-26-2024)
     - [Debug Customized PCB: Unable to Upload code to MCU with USB-to-UART](#debug-customized-pcb-unable-to-upload-code-to-mcu-with-usb-to-uart)
   - [March 29 to March 31, 2024](#march-29-to-march-31-2024)
@@ -578,7 +582,34 @@ The control flow of the MCU can be shown as a finite state machine. The main loo
 
 The MCU begins in the `STOP` state. Based on the client's requests, the MCU can only transition to `LID ACTION` or `MOVE ACTION` states. When MCU is in `LID ACTION` and `MOVE ACTION`, it only returns to `STOP` until the operation of the action is done. The duration of the operation is specified by the client. 
 
-The `MOVE ACTION` state is broken down into 5 operations: `FORWARD`, `BACKWARD`, `LEFT`, `RIGHT`, and `YOLO`. To command the MCU to perform one of the operations, the client needs to format the request accordingly and call the appropriate APIs provided by the MCU. The first 4 operations, as the state name suggested, move the trash bin forward/backward or turn the trash bin to the left/right. `YOLO` is a special operation that allows the client to adjust the speed of each motor independently, and accomplish more flexible motion, for example, moving the trash bin diagonally.
+The `MOVE ACTION` state is broken down into 5 operations: `FORWARD`, `BACKWARD`, `LEFT`, `RIGHT`, and `YOLO`. To command the MCU to perform one of the operations, the client needs to format the request accordingly and call the appropriate APIs provided by the MCU. The first 4 operations, as the state name suggested, move the trash bin forward/backward or turn the trash bin to the left/right. `YOLO` is a special operation that allows the client to adjust the speed of each motor independently, and accomplish more flexible motion, for example, moving the trash bin diagonally. So all the web service APIs should be able to change the states of the main control state machine. Only `handleLid` can change the state of the lid operation.
+
+Let's use `handleLid as example`
+```cpp
+void handleLid(AsyncWebServerRequest * request){
+	
+	#if (DEBUG)
+  Serial.println("Request lid operation"); // only for debug purposes
+	#endif
+
+  // local variables
+  JsonDocument doc;
+	String response;
+	
+	// set up operation control signals
+  stopDCMotor();
+  setLid();
+
+	// set up response data to the client
+  current_state = LID;                         // change the main FSM to LID state
+	doc["state"] = stateToString(current_state); // a helper function: convert MACRO to string
+	serializeJson(doc, response);
+
+  // time recording, and send a response to the remote control device
+	recordTime = millis();
+  request->send(200, "application/json", response);
+}
+```
 
 In the project design, once the trash bin is close to the user. The trash bin will open the lid, hold the lid open for about 30 seconds, and close the lid. The `LID ACTION` state presents this sequence of operations. When the MCU is in `LID ACTION`, it rejects other operations until it returns to the `STOP` state. Since the `LID ACTION` has a sequence of operations, it can also be shown as a state machine.
 
@@ -588,6 +619,16 @@ The MCU lid control begins with the `CLOSE` state, sets the `is_open` flag, and 
 
 The code of the main state machine is in the `loop` function in `esp32s3_control_new.ino`.<br>
 The code of the lid operation state machine is in the `checkLid` function in `Proj_Setup.cpp`.
+
+**TODO:**
+- Test all the web service APIs 
+- Write the code for motor control
+
+## March 17, 2024
+### MCU Code: Wireless Communication Testing Part 2
+
+## March 18, 2024
+### MCU Code: Motor Control Script
 
 ## March 26, 2024 
 ### Debug Customized PCB: Unable to Upload code to MCU with USB-to-UART
