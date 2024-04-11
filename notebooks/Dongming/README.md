@@ -144,7 +144,7 @@ since the bin does not accelerate up and/or down, $F_g = F_N$
 
 Therefore, the static friction of the total mass is:
 
-$m_T*g*(\mu_w+\mu_c)$ 
+$m_T * g * (\mu_w+\mu_c)$
 
 Combing the inequality:
 
@@ -228,7 +228,7 @@ The computation can be done as the following:
 
 $\text{total pulse count} = \text{PPR} * \text{reduction ratio}$
 
-$\text{output shaft speed} = \frac{\text{pulse count}}{\text{total pulse count}} * \frac{1000}{sample time (ms)} * 60$
+$\text{output shaft speed} = \frac{\text{pulse count}}{\text{total pulse count}} * \frac{1000}{\text{sample time (ms)}} * 60$
 
 This computation will approximate the current speed of the motors (in RPM) based on the pulse counts.
 
@@ -525,7 +525,7 @@ Intialize all the APIs and start asyc web server:
 ```cpp
 
   // include this chunk of code in void setup(), after WiFi setup
-	// async server handling
+  // async server handling
   server.on("/", HTTP_GET, handleRoot);
   server.on("/stop_motors", HTTP_POST, handleStopMotors);
   server.on("/set_speed", HTTP_POST, handleSetSpeed);
@@ -534,7 +534,7 @@ Intialize all the APIs and start asyc web server:
   server.on("/turn", HTTP_POST, turnLeftRight);
 
   // turn on the web server 
-	server.begin();
+  server.begin();
 ```
 
 After doing all the setup, all devices in the same wifi network can interact with the web server on ESP32S3. To interact with the server, the device can send data via `http://ESP32S3_IP_ADDRESS/:path`. An easy way to verify whether the web server is working or not is to go to `http://ESP32S3_IP_ADDRESS/` on the laptop's browsers. This triggers the root handler of the ESP32S3 web server. The relative path of the root is `/`. The browser will show the text, "Welcome to ESP32-S3". Here is the definition of the root handler of the ESP32S3 web server:
