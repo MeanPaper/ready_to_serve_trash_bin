@@ -224,7 +224,7 @@ The computation can be done as the following:
 
 $\text{total pulse count} = \text{PPR} * \text{reduction ratio}$
 
-$\text{output shaft speed} = \frac{\text{pulse count}}{\text{total pulse count}} * \frac{1000}{sample time (ms)} * 60$
+$\text{output shaft speed} = \frac{\text{pulse count}}{\text{total pulse count}} * \frac{1000}{\text{sample time (ms)}} * 60$
 
 This computation will approximate the current speed of the motors (in RPM) based on the pulse counts.
 
