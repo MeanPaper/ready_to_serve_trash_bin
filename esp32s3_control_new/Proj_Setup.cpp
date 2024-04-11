@@ -419,6 +419,7 @@ void setTargetTicksPerFrame(int left, int right)
     setTargetSpeed(left, right);
 }
 
+#define IS_MOTOR_ONE 1
 /* Command format: m mt1_speed mt2_speed */
 void plotData() {
     parseCmd();
@@ -431,15 +432,17 @@ void plotData() {
 
         /*********   comment out if not in debug set up ***********/
         /*********   the ":" and "," should not be comment out if in plotting ***********/
-        // Serial.printf("output_one:");
-        // Serial.print(output_one);
-        // Serial.print(",");
-        // Serial.print("Detected_one:");
-        // Serial.print(actualSpeed_one > NOT_CONSIDER || actualSpeed_one < -NOT_CONSIDER ? actualSpeed_one: prevSpeed_one);
-        // Serial.print(",");
-        // Serial.print("Target_one:");
-        // Serial.println(targetSpeed_one);
+        #if (IS_MOTOR_ONE)
+        Serial.printf("output_one:");
+        Serial.print(output_one);
+        Serial.print(",");
+        Serial.print("Detected_one:");
+        Serial.print(actualSpeed_one > NOT_CONSIDER || actualSpeed_one < -NOT_CONSIDER ? actualSpeed_one: prevSpeed_one);
+        Serial.print(",");
+        Serial.print("Target_one:");
+        Serial.println(targetSpeed_one);
 
+        #else
         Serial.printf("output_two:");
         Serial.print(output_two);
         Serial.print(",");
@@ -448,6 +451,8 @@ void plotData() {
         Serial.print(",");
         Serial.print("Target Two:");
         Serial.println(targetSpeed_two);
+        
+        #endif
         /******** comment out the code once PID param tuning is done *********/
     }
 }
