@@ -140,7 +140,7 @@ since the bin does not accelerate up and/or down, $F_g = F_N$
 
 Therefore, the static friction of the total mass is:
 
-$m_T*g*(\mu_w+\mu_c)$
+$m_T * g * (\mu_w+\mu_c)$
 
 Combing the inequality:
 
