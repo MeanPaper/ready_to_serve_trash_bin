@@ -558,7 +558,7 @@ Based on our plan, we can break down the testing plan as the following parts:
 - Connecting to WiFi network and verifying if the IP Address can be `ping`
 - Testing the async web server and see if the APIs receives the request and parse the request data
 
-The left image shows that ESP32S3 has successfully connected to the wifi network. Devices under the same wifi network can ping the IP address of ESP32S3 (shown in the right image).
+The first image shows that ESP32S3 has successfully connected to the wifi network. Devices under the same wifi network can ping the IP address of ESP32S3 (shown in the second image).
 
 <img src="./image/wifi-network-connection.png" alt="esp32s3 connects to wifi network" />
 <img src="./image/ping-esp32s3-ip.png" alt="ping the IP address of ESP32S3" />
