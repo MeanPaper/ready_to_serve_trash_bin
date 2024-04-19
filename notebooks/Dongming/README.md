@@ -1107,6 +1107,10 @@ With lid:
 
 Remaining tests: Raspberry Pi remote control and path planning.
 
+## April 19, 2024
+
+more notes coming soon
+
 
 ## EXTRA NOTE
 Note: the commit history might not be the same as the timeline here... the dev log might be earlier or later than the commit history. But they are almost aligned.
