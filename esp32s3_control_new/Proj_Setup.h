@@ -8,7 +8,7 @@
 
 /* Testing/debugging environment on/off */
 #define TESTING 0
-#define DEBUG 1
+#define DEBUG 0
 
 /**
   * DC Motor Control 
@@ -68,8 +68,8 @@
 #define MT_FREQ 200               // motor channel frequency, this may not work
 #define LA_FREQ 200               // linear actuator frequency
 #define MAX_PWM pow(2, RESOL)-1   // the max duty cycle
-#define LID_TIME 30000            // the lid will open for 10 sec, for testing purpose
-#define LID_TRANS_TIME 6500       // the lid transition time will be 6 sec
+#define LID_TIME 30000            // the lid will open for 30 sec, for testing purpose
+#define LID_TRANS_TIME 10000      // the lid transition time will be 10 sec
 
 /* trashbin state info */
 enum lidStateEnum {OPEN=0, TRANS=1, CLOSE=2};	// trash bin lid states

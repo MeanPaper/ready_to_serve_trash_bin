@@ -5,6 +5,8 @@
 #include <unordered_map>
 #include "Proj_Setup.h"
 
+#define MOTOR_OFF_DELAY 2000
+
 // need to register to UIUC network
 // const char * ssid = "The Retreat";
 const char * ssid = "IllinoisNet_Guest";
@@ -91,7 +93,7 @@ void loop(void) {
 				current_state = STOP;
 			}
 
-			if(millis() - recordTime > 2000){ // turn off h-bridges for dc motors when stop for 2000ms
+			if(millis() - recordTime > MOTOR_OFF_DELAY){ // turn off h-bridges for dc motors when stop for 2000ms
 				motorsOff();
 			}
 
@@ -99,7 +101,7 @@ void loop(void) {
 		case STOP:
 			stopDCMotor(); // stop all DC motors
 
-			if(millis() - recordTime > 5000){ // turn off h-bridges for dc motors when stop for 2000ms
+			if(millis() - recordTime > MOTOR_OFF_DELAY){ // turn off h-bridges for dc motors when stop for 2000ms
 				motorsOff();
 			}
             else{
@@ -134,7 +136,7 @@ void loop(void) {
 }
 
 /** web service handlers section **/
-void handleRoot(AsyncWebServerRequest * request){ // use this for debugging I guess
+void handleRoot(AsyncWebServerRequest * request){
 
 	#if (DEBUG)
 	Serial.println("Request root");
@@ -143,8 +145,12 @@ void handleRoot(AsyncWebServerRequest * request){ // use this for debugging I gu
 	request->send(200, "html", "<h1>Welcome to ESP32-S3</h1>");
 }
 
-// force stop
-void handleStopMotors(AsyncWebServerRequest * request){ // need to think about this...
+/**
+ * handleStopMotors()
+ * the service handler for /stop_motors request, send stop control signals to the motors
+ * @param request: a AsyncWebServerRequest object pointer
+*/
+void handleStopMotors(AsyncWebServerRequest * request){
 
 	#if (DEBUG)
 	Serial.println("Request stop");
@@ -176,7 +182,11 @@ void handleStopMotors(AsyncWebServerRequest * request){ // need to think about t
 	request->send(200, "application/json", response);
 }
 
-// this function is not finished yet
+/**
+ * handleSetSpeed()
+ * the service handler for /set_speed request, set the target speed for the motors 
+ * @param request: a AsyncWebServerRequest object pointer
+*/
 void handleSetSpeed(AsyncWebServerRequest * request){
 	
 	#if (DEBUG)
@@ -233,7 +243,11 @@ void handleSetSpeed(AsyncWebServerRequest * request){
     request->send(200, "application/json", response);
 }
 
-// need to do some adjustment
+/**
+ * handleLid()
+ * the service handler for /set_lid request, set the lid to open
+ * @param request: a AsyncWebServerRequest object pointer
+*/
 void handleLid(AsyncWebServerRequest * request){
 	
 	#if (DEBUG)
@@ -256,8 +270,12 @@ void handleLid(AsyncWebServerRequest * request){
     request->send(200, "application/json", response);
 }
 
-// more service handlers go here
-void turnLeftRight(AsyncWebServerRequest * request){ // turn the bin left or right
+/**
+ * turnLeftRight()
+ * the service handler for /turn request, turn the bin left or right
+ * @param request: a AsyncWebServerRequest object pointer
+*/
+void turnLeftRight(AsyncWebServerRequest * request){
 	#if (DEBUG)
 	Serial.println("Request turn left or right");
 	#endif
@@ -305,6 +323,7 @@ void turnLeftRight(AsyncWebServerRequest * request){ // turn the bin left or rig
 		}
 	}
 
+	// setup response object
 	doc["state"] = stateToString(current_state);
     
     #if (DEBUG)
@@ -319,7 +338,12 @@ void turnLeftRight(AsyncWebServerRequest * request){ // turn the bin left or rig
 	request->send(200, "application/json", response);
 }
 
-void moveForwardBackward(AsyncWebServerRequest * request){ // move the bin forward or backward
+/**
+ * moveForwardBackward()
+ * the service handler for /move request, move the bin forward or backward
+ * @param request: a AsyncWebServerRequest object pointer
+*/
+void moveForwardBackward(AsyncWebServerRequest * request){
 	#if (DEBUG)
 	Serial.println("Request move forward or backward");
 	#endif
@@ -382,6 +406,12 @@ void moveForwardBackward(AsyncWebServerRequest * request){ // move the bin forwa
 	request->send(200, "application/json", response);
 }
 
+/**
+ * stateToString()
+ * convert the binState enum to string
+ * @param state: the binState enum
+ * @return: the string representation of the binState
+*/
 std::string stateToString(binState state) {
     static const std::unordered_map<binState, std::string> stateMap = {
         {binState::LID, "LID"},

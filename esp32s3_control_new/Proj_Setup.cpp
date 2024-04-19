@@ -13,10 +13,10 @@ double max_speed = 70;
 
 // modified the following to match the specs from the motors
 int ppr = 11;                       // pulse per revolution (hall encoders)
-double reduction_ratio = 56;     // gear reduction ratio, the denominator
-double max_speed = 150;
-// double reduction_ratio = 169;
-// double max_speed = 50;          
+// double reduction_ratio = 56;     // gear reduction ratio, the denominator
+// double max_speed = 150;
+double reduction_ratio = 169;
+double max_speed = 50;          
 
 
 #endif
@@ -180,6 +180,8 @@ void stopDCMotor(){
 void motorsOff(){
     Motor_one.motorCtrl(0);
     Motor_two.motorCtrl(0);
+    Motor_one.motor_pulse_count = 0;
+    Motor_two.motor_pulse_count = 0;
 }
 
 
@@ -520,37 +522,37 @@ int rightSpeedMiss = 0;
  * if target speed cannot be reach, adjust the target speed of the DC motors to the actual speed 
  * after a certain time interval
 */
-void speedAutoAdjust(){
-    if(targetSpeed_one == 0 && targetSpeed_two == 0){
-        return;
-    }
+// void speedAutoAdjust(){
+//     if(targetSpeed_one == 0 && targetSpeed_two == 0){
+//         return;
+//     }
 
-    // left motor speed miss count
-    if(abs(targetSpeed_one - actualSpeed_one) > 1.5){ // +/- 1.5 within the target is acceptable
-        leftSpeedMiss++;
-    }
-    else{
-        leftSpeedMiss = 0;
-    }
+//     // left motor speed miss count
+//     if(abs(targetSpeed_one - actualSpeed_one) > 1.5){ // +/- 1.5 within the target is acceptable
+//         leftSpeedMiss++;
+//     }
+//     else{
+//         leftSpeedMiss = 0;
+//     }
 
-    // right motor speed miss count
-    if(abs(targetSpeed_two - actualSpeed_two) > 1.5){ // +/- 1.5 within the target is acceptable
-        rightSpeedMiss++;
-    }
-    else{
-        rightSpeedMiss = 0;
-    }
+//     // right motor speed miss count
+//     if(abs(targetSpeed_two - actualSpeed_two) > 1.5){ // +/- 1.5 within the target is acceptable
+//         rightSpeedMiss++;
+//     }
+//     else{
+//         rightSpeedMiss = 0;
+//     }
 
-    if(leftSpeedMiss > MAX_SPEED_MISS_COUNT){
-        targetSpeed_one = actualSpeed_one;
-        leftSpeedMiss = 0;
-    }
+//     if(leftSpeedMiss > MAX_SPEED_MISS_COUNT){
+//         targetSpeed_one = actualSpeed_one;
+//         leftSpeedMiss = 0;
+//     }
     
-    if(rightSpeedMiss > MAX_SPEED_MISS_COUNT){
-        targetSpeed_two = actualSpeed_two;
-        rightSpeedMiss = 0;
-    }
-}
+//     if(rightSpeedMiss > MAX_SPEED_MISS_COUNT){
+//         targetSpeed_two = actualSpeed_two;
+//         rightSpeedMiss = 0;
+//     }
+// }
 
 
 // the idea of this...
