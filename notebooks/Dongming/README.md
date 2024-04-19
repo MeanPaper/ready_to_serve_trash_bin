@@ -24,7 +24,7 @@
   - [March 17, 2024](#march-17-2024)
     - [MCU Code: Wireless Communication Testing Part 2](#mcu-code-wireless-communication-testing-part-2)
   - [March 18, 2024](#march-18-2024)
-    - [MCU Code: Motor Control Script](#mcu-code-motor-control-script)
+    - [MCU Code: Motor Control Code](#mcu-code-motor-control-code)
   - [March 26, 2024](#march-26-2024)
     - [Debug Customized PCB: Unable to Upload code to MCU with USB-to-UART](#debug-customized-pcb-unable-to-upload-code-to-mcu-with-usb-to-uart)
   - [March 29 to March 31, 2024](#march-29-to-march-31-2024)
@@ -36,6 +36,10 @@
     - [Project Design: Minor Update on Physical Design](#project-design-minor-update-on-physical-design)
   - [April 10, 2024](#april-10-2024)
     - [Project Production: Assembling and Testing](#project-production-assembling-and-testing)
+  - [April 12, 2024](#april-12-2024)
+    - [Project Production: Wire Arrangement](#project-production-wire-arrangement)
+  - [April 18, 2024](#april-18-2024)
+    - [Project Production: 3D Printed Box](#project-production-3d-printed-box)
   - [EXTRA NOTE](#extra-note)
 
 ## Feburary 12, 2024
@@ -627,8 +631,277 @@ The code of the lid operation state machine is in the `checkLid` function in `Pr
 ## March 17, 2024
 ### MCU Code: Wireless Communication Testing Part 2
 
+I have written a simple test code for sending requests to the ESP32S3 and receiving responses from the ESP32S3. Since the CV part of the project is entirely in Python, the test code will also be written in Python. If the test code works well, I can easily implement it in the CV part of the project. 
+
+More details about the test code can be found in `debugging/esp32s3_web_test.ipynb`
+
+Here are some of the example tests:
+
+Stop motor test and result:
+
+<img src='./image/stop-motor.png' width='500' />
+
+Set speed test and result:
+
+<img src='./image/set_speed.png' width='500' />
+
+Move forward test and result:
+
+<img src='./image/move-forward.png' width='500' />
+
+Move backward test and result:
+
+<img src='./image/move-back.png' width='500' />
+
+Turn left test and result:
+
+<img src='./image/turn-left.png' width='500' />
+
+Turn right test and result:
+
+<img src='./image/turn-right.png' width='500' />
+
+Set lid operation test and result:
+
+<img src='./image/set-lid.png' width='500' />
+
+The clients can access all the APIs, and all the APIs can parse the request data correctly and send back the response promptly. The average response time is less than 1 seconds, which is within our acceptable range.
+
+**TODO:**
+- Write the code for motor control
+
 ## March 18, 2024
-### MCU Code: Motor Control Script
+### MCU Code: Motor Control Code
+
+There are two types of motor the project uses:
+- DC gear motor with hall encoders
+- Linear actuator
+
+Based on the previous [PIN assignment](#mcu-code-code-struture-and-mcu-pin-assignments):
+- DC gear motor with hall encoders: 5 pins (1 for pwm, 2 for direction, 2 for hall encoders)
+- Linear actuator: 3 pins (1 for pwm, 2 for direction)
+
+`DCMotor.h` and `DCMotor.cpp` contain all the information about setting up the DC gear motor with hall encoders. <br>
+`Proj_Setup.h` and `Proj_Setup.cpp` contain the rest of the functions for the current project. 
+`esp32s3_control_new` contains the setup of the motor and event loops
+
+This is the DC motor class. This class contains all the properties being used by a motor. 
+```cpp
+class DCMotor{
+private:
+  int mt_D1;          // direction control one
+  int mt_D2;          // direction control two
+  int ledc_channel;   // pwm channel for the motor
+  int mt_resol;       // pwm resolution
+  int mt_freq;        // pwm frequency
+  int max_pwm;        // max pwm value
+
+public:
+    
+  // for motor speed sensing
+  volatile long motor_pulse_count = 0;
+
+  int mt_HALL_A; // hall sensor phase A port
+  int mt_HALL_B; // hall sensor phase B port
+
+  // constructor and destructor
+  DCMotor();
+  DCMotor(int D1, int D2, int PWM, int HALL_A, int HALL_B, int channel, int freq, int resol);
+  ~DCMotor();
+
+  // member functions
+  void setUpMotor();
+  void motorCtrl(int pwmInput);
+};
+```
+`motor_pulse_count`, `mt_HALL_A`, and `mt_HALL_B` are marked as public for convenience. Because other codes need to use them to perform speed computations and capture current speed.
+
+ESP32S3 does not have a CAN bus. The simplest solution is to use interrupt approaches. The [previous part](#mcu-code-begin) has all information on computing the speed and direction based on the readings from the hall encoder. In the original implementation, the interrupt setup for the motors is also in the class. However, the Arduino IDE has some weird issues with it. I move that part to `Proj_setup.cpp`
+
+```cpp
+void IRAM_ATTR motorOneIRQ(){ 
+    if(digitalRead(Motor_one.mt_HALL_A)){
+        Motor_one.motor_pulse_count++;
+    }
+    else{
+        Motor_one.motor_pulse_count--;
+    }
+}
+
+void IRAM_ATTR motorTwoIRQ(){
+    if(digitalRead(Motor_two.mt_HALL_A)){
+        Motor_two.motor_pulse_count++;
+    }
+    else{
+        Motor_two.motor_pulse_count--;
+    }
+}
+
+void setupMotorInterrupt(){
+    attachInterrupt(digitalPinToInterrupt(Motor_one.mt_HALL_B), motorOneIRQ, RISING);
+    attachInterrupt(digitalPinToInterrupt(Motor_two.mt_HALL_B), motorTwoIRQ, RISING);
+}
+```
+`attachInterrupt` and `digitalPinToInterrupt` are functions from Arduino IDE that set up the external interrupts on the GPIOs of an MCU. The `IRAM_ATTR` is featured in ESP32S3. Functions with `IRAM_ATTR` will be stored in memory. In the project, interrupts are called frequently. Putting the interrupt service handler on RAM can optimize performance. The function accessing time will be shorter.
+
+Object declarations
+```cpp
+DCMotor Motor_one(MT1_D1, MT1_D2, MT1_PWM, MT1_HALL_A, MT1_HALL_B, CHAN_MT_ONE, MT_FREQ, RESOL);
+DCMotor Motor_two(MT2_D1, MT2_D2, MT2_PWM, MT2_HALL_A, MT2_HALL_B, CHAN_MT_TWO, MT_FREQ, RESOL);
+```
+
+I wrote two versions of the speed control. The first version was a naive PID implementation. It worked, but it was not robust. I am not an expert in control theory. I create the second version of the motor speed control using [QuickPID](https://github.com/Dlloydev/QuickPID). It has anti-windup and other special features to optimize the PID calculation.
+
+
+Creating PID objects
+```cpp
+QuickPID MT1_PID(&actualSpeed_one, &output_one, &targetSpeed_one);
+QuickPID MT2_PID(&actualSpeed_two, &output_two, &targetSpeed_two);
+```
+Setting up the PID
+```cpp
+void QuickPID_Init(){
+    MT1_PID.Reset();
+    MT1_PID.SetTunings(Kp_one, Ki_one, Kd_one);
+    MT1_PID.SetSampleTimeUs(pid_interval * 1000);
+    MT1_PID.SetMode(MT1_PID.Control::automatic);
+    MT1_PID.SetOutputLimits((float)(MAX_PWM) * (-1), (float)(MAX_PWM));
+
+    MT2_PID.Reset();
+    MT2_PID.SetTunings(Kp_two, Ki_two, Kd_two);
+    MT2_PID.SetSampleTimeUs(pid_interval * 1000);
+    MT2_PID.SetMode(MT2_PID.Control::automatic);
+    MT2_PID.SetOutputLimits((float)(MAX_PWM) * (-1), (float)(MAX_PWM));
+}
+```
+PID sampling and computation
+```cpp
+void QuickPID_Compute(){
+    // this mind need to fixed later, it is ok for now, but not sure
+    noInterrupts();
+    if(millis() - pid_compute_time >= pid_interval){
+        // compute motor two speed, unit = revolutions per min
+        prevSpeed_two = (actualSpeed_two > 1 || actualSpeed_two < -1) ? actualSpeed_two : prevSpeed_two;
+        actualSpeed_two = (float)(Motor_two.motor_pulse_count) * speed_constant ;
+        // Motor_two.motor_pulse_count = 0; 
+
+        // compute motor one speed, unit = revolutions per min
+        prevSpeed_one = (actualSpeed_one > 1 || actualSpeed_one < -1) ? actualSpeed_one : prevSpeed_one;
+        actualSpeed_one = (float)(Motor_one.motor_pulse_count) * speed_constant;
+        
+        // Motor_one.motor_pulse_count = 0;
+        MT1_PID.Compute();
+        MT2_PID.Compute();
+
+        Motor_one.motorCtrl((int)(round(output_one)));
+        Motor_two.motorCtrl((int)(round(output_two)));
+        // noInterrupts();
+
+        Motor_two.motor_pulse_count = 0; 
+        Motor_one.motor_pulse_count = 0;
+        pid_compute_time = millis();
+    }
+    interrupts();
+}
+```
+There are some other small details that I need to pay attention to, but those 3 pieces of the code are the core of the motor speed control.
+
+Linear acutactor does not have its own class because it is simple enough. It has three parts: setup, motor control, and state machine.
+```cpp
+void setupLinearActuator(){
+    pinMode(Ln_Act_D1, OUTPUT);
+    pinMode(Ln_Act_D2, OUTPUT);
+    ledcSetup(CHAN_LN_ACT, LA_FREQ, RESOL);
+    ledcAttachPin(Ln_Act_PWM, CHAN_LN_ACT);
+    
+    lid.lidState = CLOSE;
+    lid.shouldOpen = true;
+    lid.currentTime = 0;
+}
+
+void linearActCtrl(int pwmInputLnAct){
+    if(pwmInputLnAct == 0){ // motor not moving
+        digitalWrite(Ln_Act_D1, LOW);
+        digitalWrite(Ln_Act_D2, LOW);
+        return;
+    }
+    
+    if(pwmInputLnAct > 0){ // forward movement
+        digitalWrite(Ln_Act_D1, HIGH);
+        digitalWrite(Ln_Act_D2, LOW);
+        ledcWrite(CHAN_LN_ACT, constrain(pwmInputLnAct, 0, MAX_PWM));
+    }
+    else{ // backward movement
+        digitalWrite(Ln_Act_D1, LOW);
+        digitalWrite(Ln_Act_D2, HIGH);
+        ledcWrite(CHAN_LN_ACT, -constrain(pwmInputLnAct, -MAX_PWM, 0));
+    }
+}
+
+lidStateEnum checkLid(){
+    switch(lid.lidState){
+        case OPEN:
+            openLid = false;
+            lid.shouldOpen = false;
+            if(millis() - lid.currentTime > LID_TIME){ // if open is long enough
+                lid.lidState = TRANS;
+                lid.currentTime = millis();
+            }
+            break;
+        case TRANS:
+            openLid = false;
+            if(millis() - lid.currentTime <= LID_TRANS_TIME){ // we can make trans time longer
+                if(lid.shouldOpen){ // determine if is open or closing
+                    linearActCtrl(-200);
+                }
+                else{
+                    linearActCtrl(200);
+                }
+            }
+            else{
+                linearActCtrl(0); 
+                lid.currentTime = millis();
+                if(lid.shouldOpen){
+                    lid.lidState = OPEN;
+                }
+                else{
+                    lid.lidState = CLOSE;
+                }
+            }
+            break;
+        case CLOSE: // lid is in close state
+            lid.currentTime = millis();
+            lid.shouldOpen = true;
+            lid.lidState = CLOSE;
+            if(openLid){
+                lid.lidState = TRANS;
+            }
+            break;
+        default:
+            break;
+    }
+    return lid.lidState;
+}
+```
+The `checkLid()` function is built based on the state machine based on the diagram
+
+<img src="./image/mcu_fsm_lid.png"/>
+
+The `enum` and `struct` used in the linear actuator logic:
+```cpp
+/* trashbin state info */
+enum lidStateEnum {OPEN=0, TRANS=1, CLOSE=2};	// trash bin lid states
+
+/* linear actuator control info */
+typedef struct LinearActInfo{
+    lidStateEnum lidState;
+    bool shouldOpen;
+    unsigned long currentTime;
+} LinearActInfo;
+```
+The purpose of this structure is to keep track of useful state information.
+
+Based on our design, I changed `LID_TIME` to 30000 ms (30 s). To ensure the linear can fully open and close, I set the transition time `LID_TRANS_TIME` to 10000 ms (10 s). The lid operation (close -> open -> close) takes about 50 seconds in total.
 
 ## March 26, 2024 
 ### Debug Customized PCB: Unable to Upload code to MCU with USB-to-UART
@@ -796,6 +1069,14 @@ Checklist for assembling:
 - [ ] Wire connection re-arrangement
   
 We also verified the functionalities of the trash bin system. The ESP32S3 on our PCB can connect to the wifi network successfully. It can receive and quickly process requests from other devices.
+
+## April 12, 2024
+### Project Production: Wire Arrangement
+
+## April 18, 2024
+### Project Production: 3D Printed Box
+
+
 
 ## EXTRA NOTE
 Note: the commit history might not be the same as the timeline here... the dev log might be earlier or later than the commit history. But they are almost aligned.
