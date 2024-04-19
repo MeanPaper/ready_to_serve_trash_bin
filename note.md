@@ -14,3 +14,4 @@
 - `ready-to-serve-trash-bin-v0.zip`: the basic version of the PCB
 - `ready-to-serve-trash-bin-v1.zip`: the current version of the PCB and schematic, physical PCB and components are ready for testing 
 - `ready-to-serve-trash-bin-v2.zip`: the new PCB layout, same schematics but different arrangement of components on the PCB (by Josh)
+- `ready-to-serve-trash-bin-v3.zip`: the final version of the PCB (by Josh)
