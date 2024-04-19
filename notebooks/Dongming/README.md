@@ -42,6 +42,7 @@
     - [Project Production: Product Testing without Raspberry Pi](#project-production-product-testing-without-raspberry-pi)
   - [April 18, 2024](#april-18-2024)
     - [Project Production: 3D Printed Box](#project-production-3d-printed-box)
+  - [April 19, 2024](#april-19-2024)
   - [EXTRA NOTE](#extra-note)
 
 ## Feburary 12, 2024
@@ -1107,6 +1108,9 @@ With lid:
 
 Remaining tests: Raspberry Pi remote control and path planning.
 
+## April 19, 2024
+
+more notes
 
 ## EXTRA NOTE
 Note: the commit history might not be the same as the timeline here... the dev log might be earlier or later than the commit history. But they are almost aligned.
