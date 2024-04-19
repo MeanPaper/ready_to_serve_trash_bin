@@ -37,7 +37,9 @@
   - [April 10, 2024](#april-10-2024)
     - [Project Production: Assembling and Testing](#project-production-assembling-and-testing)
   - [April 12, 2024](#april-12-2024)
-    - [Project Production: Wire Arrangement](#project-production-wire-arrangement)
+    - [Project Production: Assembling Checklist](#project-production-assembling-checklist)
+  - [April 17, 2024](#april-17-2024)
+    - [Project Production: Product Testing without Raspberry Pi](#project-production-product-testing-without-raspberry-pi)
   - [April 18, 2024](#april-18-2024)
     - [Project Production: 3D Printed Box](#project-production-3d-printed-box)
   - [EXTRA NOTE](#extra-note)
@@ -1071,11 +1073,39 @@ Checklist for assembling:
 We also verified the functionalities of the trash bin system. The ESP32S3 on our PCB can connect to the wifi network successfully. It can receive and quickly process requests from other devices.
 
 ## April 12, 2024
-### Project Production: Wire Arrangement
+### Project Production: Assembling Checklist
+
+Checklist for assembling:
+- [ ] Battery is fixed at a position (may use some dual lock fasteners)
+- [x] All wires are connected to the PCB (except the power)
+- [ ] 3D printed / cardboard box for PCB 
+- [x] Wire coverage (most of the wires are being covered)
+- [x] Wire connection re-arrangement
+
+## April 17, 2024
+### Project Production: Product Testing without Raspberry Pi
+
+Both of our motors are strong enough to move the entire bin. 
+
+We have measured the speed and time for turning the bin 90 degrees.
+
+Unfortunately, the Raspberry Pi was accidentally shut down while we were doing other tests. The HDMI port of the monitor cannot recognize the video signals from Pi. We were not sure if the Pi was damaged. We have three more Pi's ready to use.
 
 ## April 18, 2024
 ### Project Production: 3D Printed Box
+I finished making the 3D printed box for our PCB. It fits perfectly. Now we just need to wait for the fasteners arrived.
 
+The interior:
+
+<img src="./image/box_interior.jpg" width="400"/>
+
+<br>
+
+With lid:
+
+<img src="./image/box_whole.jpg" width="400"/>
+
+Remaining tests: Raspberry Pi remote control and path planning.
 
 
 ## EXTRA NOTE
