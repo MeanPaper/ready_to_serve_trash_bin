@@ -1110,7 +1110,7 @@ Remaining tests: Raspberry Pi remote control and path planning.
 
 ## April 19, 2024
 
-more notes
+more notes coming soon
 
 
 ## EXTRA NOTE
