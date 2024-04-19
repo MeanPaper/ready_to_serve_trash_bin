@@ -6,6 +6,7 @@
 #include "Proj_Setup.h"
 
 #define MOTOR_OFF_DELAY 2000
+#define CONNECTION_TIMEOUT 100
 
 // need to register to UIUC network
 // const char * ssid = "The Retreat";
@@ -34,14 +35,26 @@ void setup(void) {
     // while(millis() - temp < 2000);
 
 	// wifi connection
+    int counter = 0;
+    bool serverTurnOn = true;
 	WiFi.begin(ssid, pass);
 	Serial.printf("Connecting to %s", ssid);
 	while(!WiFi.isConnected()){ // attempt to connect
-	  Serial.print(".");
-	  delay(1000);
+	    Serial.print(".");
+	    delay(100);
+        if(counter >= CONNECTION_TIMEOUT){
+            Serial.println("Wifi connection failed");    
+            serverTurnOn = false;
+            break;
+        }
+        counter += 1;
 	}
 	Serial.println();
-
+    
+    if(serverTurnOn == false){ // if the connection fail, reboot esp32
+        ESP.restart();
+    }
+    
 	// output IP address for user connection
 	Serial.println("WiFi IP: ");
 	Serial.println(WiFi.localIP());
@@ -69,6 +82,7 @@ void setup(void) {
 	#if (DEBUG)
 	setTargetTicksPerFrame(0,0);
 	#endif
+
 }
 
 // main loop, cmd executing
