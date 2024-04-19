@@ -42,7 +42,6 @@
     - [Project Production: Product Testing without Raspberry Pi](#project-production-product-testing-without-raspberry-pi)
   - [April 18, 2024](#april-18-2024)
     - [Project Production: 3D Printed Box](#project-production-3d-printed-box)
-  - [April 19, 2024](#april-19-2024)
   - [EXTRA NOTE](#extra-note)
 
 ## Feburary 12, 2024
