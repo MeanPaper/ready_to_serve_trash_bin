@@ -42,6 +42,12 @@
     - [Project Production: Product Testing without Raspberry Pi](#project-production-product-testing-without-raspberry-pi)
   - [April 18, 2024](#april-18-2024)
     - [Project Production: 3D Printed Box](#project-production-3d-printed-box)
+  - [April 19, 2024](#april-19-2024)
+    - [Project Production: Intergration Testing Part 2](#project-production-intergration-testing-part-2)
+  - [April 20, 2024](#april-20-2024)
+    - [Project Production: Intergration Testing Part 1](#project-production-intergration-testing-part-1)
+  - [April 21, 2024](#april-21-2024)
+    - [Project Production: Demo Setup](#project-production-demo-setup)
   - [EXTRA NOTE](#extra-note)
 
 ## Feburary 12, 2024
@@ -1097,20 +1103,62 @@ I finished making the 3D printed box for our PCB. It fits perfectly. Now we just
 
 The interior:
 
-<img src="./image/box_interior.jpg" width="400"/>
+<img src="./image/box_interior.jpg" alt="the inside look of the 3D-printed PCB box" width="400"/>
 
 <br>
 
 With lid:
 
-<img src="./image/box_whole.jpg" width="400"/>
+<img src="./image/box_whole.jpg" alt="the 3D-printed PCB box with lid" width="400"/>
 
 Remaining tests: Raspberry Pi remote control and path planning.
 
 ## April 19, 2024
+### Project Production: Intergration Testing Part 1
 
-more notes coming soon
+Checklist for assembling:
+- [x] Battery is fixed at a position (may use some dual lock fasteners)
+- [x] All wires are connected to the PCB (except the power)
+- [x] 3D printed / cardboard box for PCB 
+- [x] Wire coverage (most of the wires are being covered)
+- [x] Wire connection re-arrangement
 
+One Raspberry Pi was broken in a sudden. To the best of our knowledge, nothing shorten the Raspberry Pi. The cause of this is unkown. So we ended up using one of our backup Raspberry Pi (Model: 4B, RAM: 4GB).
+
+Remaining Raspberry Pi: Raspberry Pi 4B 2GB
+
+We tested the map formation, path planning, and hand gestures without remotely controlling the bin. Everything seemed to be fine so far. 
+
+## April 20, 2024
+### Project Production: Intergration Testing Part 2
+
+We tested the map formation, path planning, and hand gestures while remotely controlling the bin. We discovered that the bin can easily go off the track and does not follow the path timely.
+
+We adjusted the PID parameter to make the bin to be more responsive. <br>
+P = 0.8, I = 16, D = 0.041
+
+The integral can lift the outputs to the desired target much faster. 
+
+We also increased the wait time on the CV end to allow the MCU sufficient time to process the incoming data and turn the motors.
+
+## April 21, 2024
+### Project Production: Demo Setup
+We set up the environment for our project demoing.
+
+The bin:
+
+<img src="./image/the_bin.jpg" alt="ready to serve trashb bin, the bin image" width="400"/>
+
+The Pi:
+
+<img src="./image/the_pi.jpg" alt="ready to serve trashb bin, the pi image" width="400"/>
+
+We also did some testing on the CV code and remote control. Everything worked fine. The bin may skip one command due to network conditions and insufficient wait time on the computer vision side, but this is within our tolerance.
+
+**What a journey! The project, Ready-To-Serve Trash Bin is finished!** 
+
+***Demo Time: 10:30:00 AM, April 22, 2024***
 
 ## EXTRA NOTE
 Note: the commit history might not be the same as the timeline here... the dev log might be earlier or later than the commit history. But they are almost aligned.
+
