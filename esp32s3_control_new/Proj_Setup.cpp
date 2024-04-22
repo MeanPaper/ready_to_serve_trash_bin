@@ -41,8 +41,17 @@ unsigned long pid_compute_time = 0;
 /* Actual PID global */
 
 // left motor (finalized)
-float Kp_one = 0.8;                 // proportional
-float Ki_one = 4;                   // integral
+// float Kp_one = 0.8;                 // proportional
+// float Ki_one = 4;
+// float Kd_one = 0.041;
+
+// very responsive
+// float Kp_one = 0.7;
+// float Ki_one = 20;                   // integral
+// float Kd_one = 0.1;               // differential
+
+float Kp_one = 0.8;
+float Ki_one = 16;                   // integral
 float Kd_one = 0.041;               // differential
 
 // working but not that good
@@ -52,7 +61,7 @@ float Kd_one = 0.041;               // differential
 
 // right motor (finalized)
 float Kp_two = 0.8;                 // proportional
-float Ki_two = 4;                   // integral
+float Ki_two = 16;                   // integral
 float Kd_two = 0.041;               // differential
 
 // the working one
@@ -421,7 +430,7 @@ void setTargetTicksPerFrame(int left, int right)
     setTargetSpeed(left, right);
 }
 
-#define IS_MOTOR_ONE 1
+// #define IS_MOTOR_ONE 0
 /* Command format: m mt1_speed mt2_speed */
 void plotData() {
     parseCmd();
@@ -434,7 +443,7 @@ void plotData() {
 
         /*********   comment out if not in debug set up ***********/
         /*********   the ":" and "," should not be comment out if in plotting ***********/
-        #if (IS_MOTOR_ONE)
+        // #if (IS_MOTOR_ONE == 1)
         Serial.printf("output_one:");
         Serial.print(output_one);
         Serial.print(",");
@@ -444,17 +453,17 @@ void plotData() {
         Serial.print("Target_one:");
         Serial.println(targetSpeed_one);
 
-        #else
-        Serial.printf("output_two:");
-        Serial.print(output_two);
-        Serial.print(",");
-        Serial.print("Detected_two:");
-        Serial.print(actualSpeed_two > NOT_CONSIDER || actualSpeed_two < -NOT_CONSIDER ? actualSpeed_two: prevSpeed_two);
-        Serial.print(",");
-        Serial.print("Target Two:");
-        Serial.println(targetSpeed_two);
+        // #else
+        // Serial.printf("output_two:");
+        // Serial.print(output_two);
+        // Serial.print(",");
+        // Serial.print("Detected_two:");
+        // Serial.print(actualSpeed_two > NOT_CONSIDER || actualSpeed_two < -NOT_CONSIDER ? actualSpeed_two: prevSpeed_two);
+        // Serial.print(",");
+        // Serial.print("Target Two:");
+        // Serial.println(targetSpeed_two);
         
-        #endif
+        // #endif
         /******** comment out the code once PID param tuning is done *********/
     }
 }
