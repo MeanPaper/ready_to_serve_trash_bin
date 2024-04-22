@@ -1114,7 +1114,7 @@ With lid:
 Remaining tests: Raspberry Pi remote control and path planning.
 
 ## April 19, 2024
-### Project Production: Intergration Testing Part 2
+### Project Production: Intergration Testing Part 1
 
 Checklist for assembling:
 - [x] Battery is fixed at a position (may use some dual lock fasteners)
@@ -1130,7 +1130,7 @@ Remaining Raspberry Pi: Raspberry Pi 4B 2GB
 We tested the map formation, path planning, and hand gestures without remotely controlling the bin. Everything seemed to be fine so far. 
 
 ## April 20, 2024
-### Project Production: Intergration Testing Part 1
+### Project Production: Intergration Testing Part 2
 
 We tested the map formation, path planning, and hand gestures while remotely controlling the bin. We discovered that the bin can easily go off the track and does not follow the path timely.
 
