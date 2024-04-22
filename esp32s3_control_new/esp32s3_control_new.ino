@@ -95,8 +95,8 @@ void loop(void) {
 	// checkLid();
     // Serial.println("Hello World");
 	#endif
-	/* testing, debugging end */
 
+	/* testing, debugging end */
 	switch(current_state){
 		case LID: 
 			// this event reject all the commands until this event finishes
