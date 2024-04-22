@@ -1155,7 +1155,7 @@ The Pi:
 
 We also did some testing on the CV code and remote control. Everything worked fine. The bin may skip one command due to network conditions and insufficient wait time on the computer vision side, but this is within our tolerance.
 
-**What a journey! The project, Ready-To-Serve Trash Bin is finished!** 
+**What a journey! The project Ready-To-Serve Trash Bin is finished!** 
 
 ***Demo Time: 10:30:00 AM, April 22, 2024***
 
