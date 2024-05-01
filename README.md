@@ -21,7 +21,18 @@ The required packages for the hand gesture detection can be found [here](https:/
 More details can be found in the [hand-gesture-recognition-mediapipe](https://github.com/MeanPaper/ready_to_serve_trash_bin/blob/main/hand-gesture-recognition-mediapipe/README.md).
 
 ## Acknowledgements
-- [Hand guesture recognition mediapipe](https://github.com/kinivi/hand-gesture-recognition-mediapipe/tree/main): computer vision for hand guesture recognition
+- [Hand guesture recognition mediapipe](https://github.com/kinivi/hand-gesture-recognition-mediapipe/tree/main): computer vision for hand guesture recognition.
+- [COMTool](https://github.com/Neutree/COMTool): easy-to-use debugging tool, for gathering data from serial port.
+
+## References
+- [QuickPID](https://github.com/Dlloydev/QuickPID/tree/master)
+- [ESPAsyncWebServer](https://github.com/esphome/ESPAsyncWebServer)
+- [ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/index.html)
+- [ESP32-S3-WROOM-1 Datasheet](https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-1_wroom-1u_datasheet_en.pdf)
+- [L298](https://www.st.com/content/ccc/resource/technical/document/datasheet/82/cc/3f/39/0a/29/4d/f0/CD00000240.pdf/files/CD00000240.pdf/jcr:content/translations/en.CD00000240.pdf)
+- [TPS56220x 4.5V to 17V Input, 2A Synchronous Step-Down Voltage Regulator in SOT-23](https://www.ti.com/lit/ds/symlink/tps562201.pdf)
+- [TLV1117LV 1-A, Positive Fixed-Voltage, Low-Dropout Regulator](https://www.ti.com/lit/ds/symlink/tlv1117lv.pdf)
+- [Low Dropout Linear Regulator](https://www.diodes.com/assets/Datasheets/AZ1117C.pdf)
 
 ## Academic Integrity
 Please review the University of Illinois Student Code, particularly all subsections of [Article 1, Part 4 - Academic Integrity Policy and Procedure](https://studentcode.illinois.edu/article1/part4/1-401/).
