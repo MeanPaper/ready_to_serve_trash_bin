@@ -1,7 +1,7 @@
 # MCU Code
 
 ## Pins (GPIOs) Setting
-
+The pin settings are listed in `Proj_Setup.h`.
 
 ## WiFi Configuration
 Change the following two lines in `esp32s3_control_new.ino` to let the MCU connect to different WiFi.
