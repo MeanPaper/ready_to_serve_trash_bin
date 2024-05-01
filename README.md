@@ -15,7 +15,7 @@ In order to eliminate the problems with existing trash bins for people with limi
 ### Hand Gesture Detection
 For hand gesture detection, we recommend [Raspberry Pi 4B with 4GB RAM](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/) with [64-Bit Raspberry Pi OS](https://www.raspberrypi.com/software/operating-systems/). The project uses this [Pi Camera](https://www.amazon.com/Arducam-Megapixels-Sensor-OV5647-Raspberry/dp/B012V1HEP4?th=1) in our project but other Pi Camera or USB camera should work as well. 
 
-The required package for the hand gesture detection can be found [here](https://github.com/MeanPaper/ready_to_serve_trash_bin/blob/main/hand-gesture-recognition-mediapipe/README.md#requirements). To make package installation easier, we recommend setting up a virtual python environment using [`conda`](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) or [`venv`](https://docs.python.org/3/tutorial/venv.html). 
+The required packages for the hand gesture detection can be found [here](https://github.com/MeanPaper/ready_to_serve_trash_bin/blob/main/hand-gesture-recognition-mediapipe/README.md#requirements). To make package installation easier, we recommend setting up a virtual python environment using [`conda`](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) or [`venv`](https://docs.python.org/3/tutorial/venv.html). 
 
 ### Running Hand Gesture Detection and Training
 More details can be found in the [hand-gesture-recognition-mediapipe](https://github.com/MeanPaper/ready_to_serve_trash_bin/blob/main/hand-gesture-recognition-mediapipe/README.md).
